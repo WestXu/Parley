@@ -30,7 +30,12 @@ export async function startSession({ apiKey, target, micTrack, handlers }: Args)
   dc.onopen = () => {
     dc.send(JSON.stringify({
       type: "session.update",
-      session: { audio: { output: { language: target } } },
+      session: {
+        audio: {
+          input: { transcription: { model: "gpt-realtime-whisper" } },
+          output: { language: target },
+        },
+      },
     }))
     onStatus("connected")
   }
