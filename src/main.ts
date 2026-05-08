@@ -10,7 +10,6 @@ const $ = <T extends HTMLElement>(sel: string) => {
 
 const startBtn = $<HTMLButtonElement>("#start")
 const statusEl = $<HTMLSpanElement>("#status")
-const bar = $<HTMLDivElement>("#bar")
 
 type PaneKey = "en-you" | "en-them" | "zh-you" | "zh-them"
 const body = (k: PaneKey) => $<HTMLDivElement>(`[data-body="${k}"]`)
@@ -45,6 +44,23 @@ function reportStatus(which: Lang, s: string) {
   setStatus(`EN→ZH: ${statuses.zh} · ZH→EN: ${statuses.en}`)
 }
 
+let active: { pcs: RTCPeerConnection[]; stream: MediaStream } | null = null
+
+function setRunning(running: boolean) {
+  startBtn.textContent = running ? "Stop" : "Start"
+  startBtn.classList.toggle("btn-primary", !running)
+  startBtn.classList.toggle("btn-error", running)
+}
+
+function stop() {
+  if (!active) return
+  for (const pc of active.pcs) pc.close()
+  for (const t of active.stream.getTracks()) t.stop()
+  active = null
+  setRunning(false)
+  setStatus("stopped")
+}
+
 async function start() {
   if (!apiKey) {
     setStatus("missing VITE_OPENAI_API_KEY")
@@ -66,6 +82,7 @@ async function start() {
   const micTrack = stream.getAudioTracks()[0]
   if (!micTrack) {
     setStatus("no mic track")
+    startBtn.disabled = false
     return
   }
 
@@ -75,7 +92,7 @@ async function start() {
   const enThem = makeAppender(body("en-them"))
 
   try {
-    await Promise.all([
+    const pcs = await Promise.all([
       startSession({
         apiKey, target: "zh", micTrack,
         handlers: {
@@ -97,12 +114,18 @@ async function start() {
         },
       }),
     ])
-    bar.classList.add("hidden")
+    active = { pcs, stream }
+    setRunning(true)
   } catch (e) {
     console.error(e)
     setStatus(`failed: ${(e as Error).message}`)
+    for (const t of stream.getTracks()) t.stop()
+  } finally {
     startBtn.disabled = false
   }
 }
 
-startBtn.addEventListener("click", start)
+startBtn.addEventListener("click", () => {
+  if (active) stop()
+  else start()
+})
