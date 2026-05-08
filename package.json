@@ -18,8 +18,5 @@
   "peerDependencies": {
     "typescript": "^5"
   },
-  "dependencies": {
-    "marked": "^17.0.4",
-    "openai": "^6.32.0"
-  }
+  "dependencies": {}
 }
