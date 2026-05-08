@@ -1,7 +1,7 @@
 const MODEL = "gpt-realtime-translate"
 const URL = `https://api.openai.com/v1/realtime/translations/calls?model=${MODEL}`
 
-type Lang = "en" | "vi"
+type Lang = "en" | "zh"
 
 type Handlers = {
   onInputDelta: (text: string) => void

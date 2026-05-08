@@ -12,7 +12,7 @@ const startBtn = $<HTMLButtonElement>("#start")
 const statusEl = $<HTMLSpanElement>("#status")
 const bar = $<HTMLDivElement>("#bar")
 
-type PaneKey = "en-you" | "en-them" | "vi-you" | "vi-them"
+type PaneKey = "en-you" | "en-them" | "zh-you" | "zh-them"
 const body = (k: PaneKey) => $<HTMLDivElement>(`[data-body="${k}"]`)
 
 function makeAppender(pane: HTMLDivElement) {
@@ -38,11 +38,11 @@ function setStatus(s: string) {
   statusEl.textContent = s
 }
 
-type Lang = "en" | "vi"
-const statuses: Record<Lang, string> = { en: "idle", vi: "idle" }
+type Lang = "en" | "zh"
+const statuses: Record<Lang, string> = { en: "idle", zh: "idle" }
 function reportStatus(which: Lang, s: string) {
   statuses[which] = s
-  setStatus(`EN→VI: ${statuses.vi} · VI→EN: ${statuses.en}`)
+  setStatus(`EN→ZH: ${statuses.zh} · ZH→EN: ${statuses.en}`)
 }
 
 async function start() {
@@ -69,28 +69,28 @@ async function start() {
     return
   }
 
-  const viYou = makeAppender(body("vi-you"))
-  const viThem = makeAppender(body("vi-them"))
+  const zhYou = makeAppender(body("zh-you"))
+  const zhThem = makeAppender(body("zh-them"))
   const enYou = makeAppender(body("en-you"))
   const enThem = makeAppender(body("en-them"))
 
   try {
     await Promise.all([
       startSession({
-        apiKey, target: "vi", micTrack,
+        apiKey, target: "zh", micTrack,
         handlers: {
           onInputDelta: (t) => enYou.delta(t),
           onInputDone: () => enYou.done(),
-          onOutputDelta: (t) => viThem.delta(t),
-          onOutputDone: () => viThem.done(),
-          onStatus: (s) => reportStatus("vi", s),
+          onOutputDelta: (t) => zhThem.delta(t),
+          onOutputDone: () => zhThem.done(),
+          onStatus: (s) => reportStatus("zh", s),
         },
       }),
       startSession({
         apiKey, target: "en", micTrack,
         handlers: {
-          onInputDelta: (t) => viYou.delta(t),
-          onInputDone: () => viYou.done(),
+          onInputDelta: (t) => zhYou.delta(t),
+          onInputDone: () => zhYou.done(),
           onOutputDelta: (t) => enThem.delta(t),
           onOutputDone: () => enThem.done(),
           onStatus: (s) => reportStatus("en", s),
