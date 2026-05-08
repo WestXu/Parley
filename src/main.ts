@@ -11,8 +11,6 @@ const $ = <T extends HTMLElement>(sel: string) => {
 const startBtn = $<HTMLButtonElement>("#start")
 const statusEl = $<HTMLSpanElement>("#status")
 const bar = $<HTMLDivElement>("#bar")
-const audioVi = $<HTMLAudioElement>("#audio-vi")
-const audioEn = $<HTMLAudioElement>("#audio-en")
 
 type PaneKey = "en-you" | "en-them" | "vi-you" | "vi-them"
 const body = (k: PaneKey) => $<HTMLDivElement>(`[data-body="${k}"]`)
@@ -79,7 +77,7 @@ async function start() {
   try {
     await Promise.all([
       startSession({
-        apiKey, target: "vi", micTrack, audioEl: audioVi,
+        apiKey, target: "vi", micTrack,
         handlers: {
           onInputDelta: (t) => enYou.delta(t),
           onInputDone: () => enYou.done(),
@@ -89,7 +87,7 @@ async function start() {
         },
       }),
       startSession({
-        apiKey, target: "en", micTrack, audioEl: audioEn,
+        apiKey, target: "en", micTrack,
         handlers: {
           onInputDelta: (t) => viYou.delta(t),
           onInputDone: () => viYou.done(),

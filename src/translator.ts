@@ -15,23 +15,16 @@ type Args = {
   apiKey: string
   target: Lang
   micTrack: MediaStreamTrack
-  audioEl: HTMLAudioElement
   handlers: Handlers
 }
 
-export async function startSession({ apiKey, target, micTrack, audioEl, handlers }: Args): Promise<RTCPeerConnection> {
+export async function startSession({ apiKey, target, micTrack, handlers }: Args): Promise<RTCPeerConnection> {
   const { onInputDelta, onInputDone, onOutputDelta, onOutputDone, onStatus } = handlers
   onStatus("connecting")
 
   const pc = new RTCPeerConnection()
 
-  pc.ontrack = (e) => {
-    const stream = e.streams[0]
-    if (stream) audioEl.srcObject = stream
-  }
-
   pc.addTrack(micTrack)
-  pc.addTransceiver("audio", { direction: "recvonly" })
 
   const dc = pc.createDataChannel("oai-events")
   dc.onopen = () => {
