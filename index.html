@@ -12,30 +12,9 @@
 </head>
 
 <body class="bg-base-100 text-base-content overflow-hidden h-dvh font-sans">
-  <main class="grid grid-rows-2 h-dvh">
-    <section data-side="zh" class="side flipped grid grid-cols-2 gap-3 p-4 border-b border-base-300">
-      <div class="pane" data-pane="zh-you">
-        <div class="pane-label">你说</div>
-        <div class="pane-body" data-body="zh-you"></div>
-      </div>
-      <div class="pane" data-pane="zh-them">
-        <div class="pane-label">对方说</div>
-        <div class="pane-body" data-body="zh-them"></div>
-      </div>
-    </section>
-    <section data-side="en" class="side grid grid-cols-2 gap-3 p-4">
-      <div class="pane" data-pane="en-them">
-        <div class="pane-label">They said</div>
-        <div class="pane-body" data-body="en-them"></div>
-      </div>
-      <div class="pane" data-pane="en-you">
-        <div class="pane-label">You said</div>
-        <div class="pane-body" data-body="en-you"></div>
-      </div>
-    </section>
-  </main>
+  <main id="list" class="h-dvh overflow-y-auto px-3 pt-4 pb-24 flex flex-col gap-3"></main>
 
-  <div id="bar" class="fixed inset-x-0 top-1/2 -translate-y-1/2 flex justify-center pointer-events-none">
+  <div id="bar" class="fixed inset-x-0 bottom-4 flex justify-center pointer-events-none">
     <div class="flex items-center gap-3 bg-base-200/90 backdrop-blur rounded-full px-4 py-2 shadow pointer-events-auto">
       <span id="status" class="text-sm opacity-70">idle</span>
       <button id="start" class="btn btn-sm btn-primary">Start</button>

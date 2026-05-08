@@ -1,4 +1,5 @@
-import { startSession } from "./translator"
+import { startTranscription } from "./transcribe"
+import { translate, type Triple } from "./translate"
 
 const apiKey = import.meta.env.VITE_OPENAI_API_KEY as string | undefined
 
@@ -10,41 +11,65 @@ const $ = <T extends HTMLElement>(sel: string) => {
 
 const startBtn = $<HTMLButtonElement>("#start")
 const statusEl = $<HTMLSpanElement>("#status")
+const list = $<HTMLElement>("#list")
 
-type PaneKey = "en-you" | "en-them" | "zh-you" | "zh-them"
-const body = (k: PaneKey) => $<HTMLDivElement>(`[data-body="${k}"]`)
+const setStatus = (s: string) => { statusEl.textContent = s }
 
-function makeAppender(pane: HTMLDivElement) {
-  let current: HTMLDivElement | null = null
+function autoScroll() {
+  const slack = list.scrollHeight - list.scrollTop - list.clientHeight
+  if (slack < 80) list.scrollTop = list.scrollHeight
+}
+
+type Bubble = {
+  setTitle: (t: string) => void
+  finalize: () => void
+  fill: (tr: Triple) => void
+  error: (msg: string) => void
+}
+
+function makeBubble(): Bubble {
+  const el = document.createElement("article")
+  el.className = "bubble partial"
+  const title = document.createElement("div")
+  title.className = "bubble-title"
+  el.appendChild(title)
+  list.appendChild(el)
+  autoScroll()
+
   return {
-    delta(text: string) {
-      if (!current) {
-        current = document.createElement("div")
-        current.className = "turn partial"
-        pane.appendChild(current)
-      }
-      current.textContent = (current.textContent ?? "") + text
-      pane.scrollTop = pane.scrollHeight
+    setTitle(t) {
+      title.textContent = t
+      autoScroll()
     },
-    done() {
-      if (current) current.classList.remove("partial")
-      current = null
+    finalize() {
+      el.classList.remove("partial")
+    },
+    fill(tr) {
+      el.dataset.source = tr.source
+      title.lang = tr.source
+      title.textContent = tr[tr.source]
+      for (const lang of ["zh", "vi", "en"] as const) {
+        const row = document.createElement("div")
+        row.className = "bubble-tr"
+        row.lang = lang
+        row.textContent = tr[lang]
+        el.appendChild(row)
+      }
+      autoScroll()
+    },
+    error(msg) {
+      el.classList.add("error")
+      const row = document.createElement("div")
+      row.className = "bubble-tr"
+      row.textContent = msg
+      el.appendChild(row)
+      autoScroll()
     },
   }
 }
 
-function setStatus(s: string) {
-  statusEl.textContent = s
-}
-
-type Lang = "en" | "zh"
-const statuses: Record<Lang, string> = { en: "idle", zh: "idle" }
-function reportStatus(which: Lang, s: string) {
-  statuses[which] = s
-  setStatus(`EN→ZH: ${statuses.zh} · ZH→EN: ${statuses.en}`)
-}
-
-let active: { pcs: RTCPeerConnection[]; stream: MediaStream } | null = null
+let active: { pc: RTCPeerConnection; stream: MediaStream } | null = null
+let partial: Bubble | null = null
 
 function setRunning(running: boolean) {
   startBtn.textContent = running ? "Stop" : "Start"
@@ -54,9 +79,10 @@ function setRunning(running: boolean) {
 
 function stop() {
   if (!active) return
-  for (const pc of active.pcs) pc.close()
+  active.pc.close()
   for (const t of active.stream.getTracks()) t.stop()
   active = null
+  partial = null
   setRunning(false)
   setStatus("stopped")
 }
@@ -86,35 +112,31 @@ async function start() {
     return
   }
 
-  const zhYou = makeAppender(body("zh-you"))
-  const zhThem = makeAppender(body("zh-them"))
-  const enYou = makeAppender(body("en-you"))
-  const enThem = makeAppender(body("en-them"))
-
   try {
-    const pcs = await Promise.all([
-      startSession({
-        apiKey, target: "zh", micTrack,
-        handlers: {
-          onInputDelta: (t) => enYou.delta(t),
-          onInputDone: () => enYou.done(),
-          onOutputDelta: (t) => zhThem.delta(t),
-          onOutputDone: () => zhThem.done(),
-          onStatus: (s) => reportStatus("zh", s),
+    const pc = await startTranscription({
+      apiKey,
+      micTrack,
+      handlers: {
+        onPartial: (text) => {
+          if (!partial) partial = makeBubble()
+          partial.setTitle(text)
         },
-      }),
-      startSession({
-        apiKey, target: "en", micTrack,
-        handlers: {
-          onInputDelta: (t) => zhYou.delta(t),
-          onInputDone: () => zhYou.done(),
-          onOutputDelta: (t) => enThem.delta(t),
-          onOutputDone: () => enThem.done(),
-          onStatus: (s) => reportStatus("en", s),
+        onFinal: (text) => {
+          const bubble = partial ?? makeBubble()
+          partial = null
+          bubble.setTitle(text)
+          bubble.finalize()
+          translate(apiKey, text)
+            .then((tr) => bubble.fill(tr))
+            .catch((e) => {
+              console.error(e)
+              bubble.error((e as Error).message)
+            })
         },
-      }),
-    ])
-    active = { pcs, stream }
+        onStatus: setStatus,
+      },
+    })
+    active = { pc, stream }
     setRunning(true)
   } catch (e) {
     console.error(e)

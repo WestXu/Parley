@@ -1,31 +1,32 @@
 @import "tailwindcss";
 @plugin "daisyui/index.js";
 
-.side {
-  min-height: 0;
-}
-
-.flipped {
-  transform: rotate(180deg);
-}
-
-.pane {
-  @apply bg-base-200 rounded-2xl p-4 flex flex-col gap-2 min-h-0;
-}
-
-.pane-label {
-  @apply text-xs uppercase tracking-wide opacity-60 shrink-0;
-}
-
-.pane-body {
-  @apply flex-1 overflow-y-auto text-lg leading-snug;
+#list {
   scrollbar-width: thin;
 }
 
-.pane-body .turn {
-  @apply mb-3 last:mb-0;
+.bubble {
+  @apply bg-base-200 rounded-2xl px-4 py-3 flex flex-col gap-1;
 }
 
-.pane-body .turn.partial {
-  @apply opacity-70;
+.bubble-title {
+  @apply text-xl leading-snug font-medium;
+}
+
+.bubble-tr {
+  @apply text-base leading-snug opacity-80;
+}
+
+.bubble.partial {
+  @apply opacity-60;
+}
+
+.bubble.error .bubble-title {
+  @apply text-error;
+}
+
+.bubble[data-source="zh"] .bubble-tr[lang="zh"],
+.bubble[data-source="vi"] .bubble-tr[lang="vi"],
+.bubble[data-source="en"] .bubble-tr[lang="en"] {
+  display: none;
 }
