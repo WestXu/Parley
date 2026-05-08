@@ -15,7 +15,8 @@
   <main id="list" class="h-dvh overflow-y-auto px-3 pt-4 pb-24 flex flex-col gap-3"></main>
 
   <div id="bar" class="fixed inset-x-0 bottom-4 flex justify-center pointer-events-none">
-    <div class="flex items-center gap-3 bg-base-200/90 backdrop-blur rounded-full px-4 py-2 shadow pointer-events-auto">
+    <div class="flex items-center gap-3 bg-base-200 border border-base-300 rounded-full px-4 py-2 shadow-lg pointer-events-auto">
+      <span id="status-dot" class="status status-sm status-neutral"></span>
       <span id="status" class="text-sm opacity-70">idle</span>
       <button id="start" class="btn btn-sm btn-primary">Start</button>
     </div>

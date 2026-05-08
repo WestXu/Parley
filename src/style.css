@@ -5,28 +5,28 @@
   scrollbar-width: thin;
 }
 
-.bubble {
-  @apply bg-base-200 rounded-2xl px-4 py-3 flex flex-col gap-1;
-}
-
 .bubble-title {
   @apply text-xl leading-snug font-medium;
 }
 
 .bubble-tr {
-  @apply text-base leading-snug opacity-80;
+  @apply rounded-lg px-3 py-2 flex items-start gap-2 text-base leading-snug;
 }
 
-.bubble.partial {
-  @apply opacity-60;
+.bubble-tr[data-lang="zh"] { @apply bg-info/10; }
+.bubble-tr[data-lang="en"] { @apply bg-success/10; }
+.bubble-tr[data-lang="vi"] { @apply bg-warning/10; }
+
+.bubble[data-source="zh"] .bubble-tr[data-lang="zh"],
+.bubble[data-source="en"] .bubble-tr[data-lang="en"],
+.bubble[data-source="vi"] .bubble-tr[data-lang="vi"] {
+  display: none;
 }
+
+.bubble[data-source="zh"] .bubble-title { @apply text-info; }
+.bubble[data-source="en"] .bubble-title { @apply text-success; }
+.bubble[data-source="vi"] .bubble-title { @apply text-warning; }
 
 .bubble.error .bubble-title {
   @apply text-error;
-}
-
-.bubble[data-source="zh"] .bubble-tr[lang="zh"],
-.bubble[data-source="vi"] .bubble-tr[lang="vi"],
-.bubble[data-source="en"] .bubble-tr[lang="en"] {
-  display: none;
 }
