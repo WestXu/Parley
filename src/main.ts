@@ -20,8 +20,7 @@ const setDot = (kind: "neutral" | "success" | "error") => {
 }
 
 function autoScroll() {
-  const slack = list.scrollHeight - list.scrollTop - list.clientHeight
-  if (slack < 80) list.scrollTop = list.scrollHeight
+  list.scrollTop = list.scrollHeight
 }
 
 type Bubble = {
