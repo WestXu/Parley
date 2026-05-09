@@ -56,6 +56,7 @@ langBSel.addEventListener("change", onChange(langBSel, langASel, prevB))
 let active: { mic: Mic; session: Session; aPane: Pane; bPane: Pane; langA: Lang; langB: Lang } | null = null
 let lastA: Lang | null = null
 let lastB: Lang | null = null
+let wakeLock: WakeLockSentinel | null = null
 
 const setRunning = (running: boolean) => {
   startBtn.textContent = running ? "Stop" : "Start"
@@ -66,10 +67,21 @@ const setRunning = (running: boolean) => {
   setDot(running ? "success" : "neutral")
 }
 
+const acquireWakeLock = async () => {
+  if (wakeLock || !("wakeLock" in navigator)) return
+  try { wakeLock = await navigator.wakeLock.request("screen") }
+  catch (e) { console.warn("wake lock failed", e) }
+}
+const releaseWakeLock = () => {
+  wakeLock?.release()
+  wakeLock = null
+}
+
 const stop = () => {
   if (!active) return
   active.session.stop()
   active.mic.stop()
+  releaseWakeLock()
   active = null
   setRunning(false)
 }
@@ -128,6 +140,7 @@ const start = async () => {
     })
     active = { mic, session, aPane, bPane, langA, langB }
     setRunning(true)
+    acquireWakeLock()
   } catch (e) {
     console.error(e)
     setStatus((e as Error).message)
@@ -153,6 +166,10 @@ swapBtn.addEventListener("click", () => {
 
 rotateBtn.addEventListener("click", () => {
   aEl.parentElement?.classList.toggle("top-rotated")
+})
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && active) acquireWakeLock()
 })
 
 matchMedia("(orientation: portrait)").addEventListener("change", () => {
