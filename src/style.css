@@ -5,12 +5,20 @@
   scrollbar-width: thin;
 }
 
-.pane:first-of-type {
-  padding-top: max(0.75rem, env(safe-area-inset-top));
+@media (orientation: portrait) {
+  .pane:first-of-type {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+  .pane:last-of-type {
+    padding-bottom: 3.5rem;
+  }
 }
 
-.pane:last-of-type {
-  padding-bottom: 3.5rem;
+@media (orientation: landscape) {
+  .pane {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-bottom: 3.5rem;
+  }
 }
 
 .line {
