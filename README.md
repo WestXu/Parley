@@ -1,10 +1,10 @@
 # Translate
 
-Realtime EN ↔ VI interpreter for an iPad laid flat between two speakers. Wraps OpenAI `gpt-realtime-translate` over WebRTC.
+Realtime ZH ↔ EN interpreter for an iPad laid flat between two speakers. Wraps Soniox real-time translation over WebSocket; speakers are distinguished via diarization.
 
 ```
 # .env
-VITE_OPENAI_API_KEY=sk-***
+VITE_SONIOX_API_KEY=...
 ```
 
 Dev: `bun run dev` (vite on `:5173`, HTTPS via self-signed cert; access from iPad as `https://<mac-ip>:5173`).
@@ -12,11 +12,6 @@ Build: `bun run build` → `dist/`. Caddy serves `dist/` with basicauth.
 
 ## How it works
 
-Two parallel WebRTC sessions, both fed the same mic track:
+Single Soniox WebSocket session in two-way translation mode (`language_a: zh`, `language_b: en`) with speaker diarization enabled. Mic audio is captured via Web Audio API and downsampled to 16 kHz s16le by an `AudioWorklet`, then pushed as binary frames over the socket.
 
-- target `vi` → translates EN speech to Vietnamese
-- target `en` → translates VI speech to English
-
-Source language is auto-detected per session. Translated audio plays through two `<audio>` elements; transcripts (input + output) arrive on each session's data channel.
-
-UI: top half is rotated 180° for the person across the table; each half shows "You said" + "They said" panes in that side's language.
+Tokens stream back tagged with `language`, `speaker`, `is_final`, and `translation_status`. Each token is routed to the pane matching its language — the screen is split top (zh) / bottom (en), so each utterance appears as the original in one pane and the translation in the other. Within each pane, lines are grouped by speaker and color-coded.

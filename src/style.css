@@ -1,32 +1,28 @@
 @import "tailwindcss";
 @plugin "daisyui/index.js";
 
-#list {
+.pane {
   scrollbar-width: thin;
 }
 
-.bubble-title {
-  @apply text-xl leading-snug font-medium;
+.line {
+  @apply text-xl leading-snug py-1;
 }
 
-.bubble-tr {
-  @apply rounded-lg px-3 py-2 flex items-start gap-2 text-base leading-snug;
+.speaker-badge {
+  @apply badge badge-soft badge-sm align-middle mr-2;
 }
 
-.bubble-tr[data-lang="zh"] { @apply bg-info/10; }
-.bubble-tr[data-lang="en"] { @apply bg-success/10; }
-.bubble-tr[data-lang="vi"] { @apply bg-warning/10; }
+.line[data-speaker="1"] .speaker-badge { @apply badge-info; }
+.line[data-speaker="2"] .speaker-badge { @apply badge-warning; }
+.line[data-speaker="3"] .speaker-badge { @apply badge-success; }
+.line[data-speaker="4"] .speaker-badge { @apply badge-accent; }
 
-.bubble[data-source="zh"] .bubble-tr[data-lang="zh"],
-.bubble[data-source="en"] .bubble-tr[data-lang="en"],
-.bubble[data-source="vi"] .bubble-tr[data-lang="vi"] {
-  display: none;
+.live {
+  @apply opacity-50;
 }
 
-.bubble[data-source="zh"] .bubble-title { @apply text-info; }
-.bubble[data-source="en"] .bubble-title { @apply text-success; }
-.bubble[data-source="vi"] .bubble-title { @apply text-warning; }
-
-.bubble.error .bubble-title {
-  @apply text-error;
+.live:not(:empty)::after {
+  content: "▌";
+  @apply opacity-70 ml-0.5;
 }
