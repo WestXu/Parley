@@ -13,7 +13,7 @@ export type Token = {
 type RawToken = {
   text?: string
   language?: string
-  speaker?: number
+  speaker?: string | number
   is_final?: boolean
   translation_status?: "none" | "original" | "translation"
 }
@@ -35,6 +35,7 @@ export function startSession(apiKey: string, otherLang: OtherLang, handlers: Han
   ws.binaryType = "arraybuffer"
 
   let open = false
+  let lastSpeaker: number | null = null
   const queue: ArrayBuffer[] = []
 
   ws.onopen = () => {
@@ -71,12 +72,10 @@ export function startSession(apiKey: string, otherLang: OtherLang, handlers: Han
       if (t.translation_status === "none") continue
       const lang = t.language === otherLang || t.language === "en" ? t.language : null
       if (!lang) continue
-      out.push({
-        text: t.text,
-        language: lang,
-        speaker: typeof t.speaker === "number" ? t.speaker : 0,
-        is_final: t.is_final === true,
-      })
+      const parsed = t.speaker == null ? NaN : Number(t.speaker)
+      if (Number.isFinite(parsed)) lastSpeaker = parsed
+      const speaker = Number.isFinite(parsed) ? parsed : (lastSpeaker ?? 0)
+      out.push({ text: t.text, language: lang, speaker, is_final: t.is_final === true })
     }
     if (out.length) onTokens(out)
   }
