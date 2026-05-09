@@ -1,6 +1,6 @@
 import { startMic, type Mic } from "./audio"
-import { startSession, LANGS, type Session, type Token, type Lang } from "./soniox"
-import { makePane, type Pane } from "./render"
+import { startSession, LANGS, type Session, type Lang } from "./soniox"
+import { makeBoard, type Board } from "./render"
 
 const apiKey = import.meta.env.VITE_SONIOX_API_KEY as string | undefined
 const KEY_A = "translate.langA"
@@ -21,6 +21,7 @@ const langASel = $<HTMLSelectElement>("#lang-a")
 const langBSel = $<HTMLSelectElement>("#lang-b")
 const aEl = $<HTMLElement>("#pane-a")
 const bEl = $<HTMLElement>("#pane-b")
+const delBtn = $<HTMLButtonElement>("#del-btn")
 
 const setStatus = (s: string) => { statusEl.textContent = s }
 const setDot = (kind: "neutral" | "success" | "error") => {
@@ -53,7 +54,7 @@ const prevB = { value: langBSel.value }
 langASel.addEventListener("change", onChange(langASel, langBSel, prevA))
 langBSel.addEventListener("change", onChange(langBSel, langASel, prevB))
 
-let active: { mic: Mic; session: Session; aPane: Pane; bPane: Pane; langA: Lang; langB: Lang } | null = null
+let active: { mic: Mic; session: Session; board: Board; langA: Lang; langB: Lang } | null = null
 let lastA: Lang | null = null
 let lastB: Lang | null = null
 let wakeLock: WakeLockSentinel | null = null
@@ -113,23 +114,14 @@ const start = async () => {
   }
   lastA = langA
   lastB = langB
-  const aPane = makePane(aEl, langA)
-  const bPane = makePane(bEl, langB)
-
-  const route = (tokens: Token[]) => {
-    const a: Token[] = []
-    const b: Token[] = []
-    for (const t of tokens) (t.language === langA ? a : b).push(t)
-    aPane.apply(a)
-    bPane.apply(b)
-  }
+  const board = makeBoard(aEl, langA, bEl, langB, delBtn)
 
   let mic: Mic
   try {
     let session: Session | null = null
     mic = await startMic((pcm) => session?.send(pcm))
     session = startSession(apiKey, langA, langB, {
-      onTokens: route,
+      onTokens: board.apply,
       onStatus: setStatus,
       onError: (e) => {
         console.error(e)
@@ -138,7 +130,7 @@ const start = async () => {
         stop()
       },
     })
-    active = { mic, session, aPane, bPane, langA, langB }
+    active = { mic, session, board, langA, langB }
     setRunning(true)
     acquireWakeLock()
   } catch (e) {

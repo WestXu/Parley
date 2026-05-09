@@ -48,3 +48,22 @@ main.top-rotated > section:first-child {
   content: "▌";
   @apply opacity-70 ml-0.5;
 }
+
+.line { --hl: var(--color-base-content); }
+.line[data-speaker="1"] { --hl: var(--color-info); }
+.line[data-speaker="2"] { --hl: var(--color-warning); }
+.line[data-speaker="3"] { --hl: var(--color-success); }
+.line[data-speaker="4"] { --hl: var(--color-accent); }
+
+.sentence {
+  cursor: pointer;
+  border: 1px dashed transparent;
+  border-radius: 0.25rem;
+  padding: 0 0.125rem;
+  transition: background-color 120ms, border-color 120ms;
+}
+
+.sentence.selected {
+  border-color: var(--hl);
+  background-color: color-mix(in srgb, var(--hl) 20%, transparent);
+}
