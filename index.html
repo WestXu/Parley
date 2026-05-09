@@ -13,14 +13,19 @@
 
 <body class="bg-base-100 text-base-content overflow-hidden h-dvh font-sans">
   <main class="grid grid-rows-2 h-dvh divide-y divide-base-300">
-    <section id="pane-zh" class="pane overflow-y-auto px-4 py-3"></section>
-    <section id="pane-en" class="pane overflow-y-auto px-4 py-3"></section>
+    <section id="pane-other" class="pane overflow-y-auto px-4 py-3"></section>
+    <section id="pane-en" class="pane overflow-y-auto px-4 pt-3 pb-20"></section>
   </main>
 
   <div id="bar" class="fixed inset-x-0 bottom-4 flex justify-center pointer-events-none">
     <div class="flex items-center gap-3 bg-base-200 border border-base-300 rounded-full px-4 py-2 shadow-lg pointer-events-auto">
       <span id="status-dot" class="status status-sm status-neutral"></span>
       <span id="status" class="text-sm opacity-70">idle</span>
+      <select id="lang" class="select select-sm select-ghost w-auto">
+        <option value="zh">中文</option>
+        <option value="vi">Tiếng Việt</option>
+        <option value="ja">日本語</option>
+      </select>
       <button id="start" class="btn btn-sm btn-primary">Start</button>
     </div>
   </div>

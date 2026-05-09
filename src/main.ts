@@ -1,8 +1,9 @@
 import { startMic, type Mic } from "./audio"
-import { startSession, type Session, type Token } from "./soniox"
-import { makePane } from "./render"
+import { startSession, type Session, type Token, type OtherLang } from "./soniox"
+import { makePane, type Pane } from "./render"
 
 const apiKey = import.meta.env.VITE_SONIOX_API_KEY as string | undefined
+const LANG_KEY = "translate.otherLang"
 
 const $ = <T extends HTMLElement>(sel: string) => {
   const el = document.querySelector(sel) as T | null
@@ -13,29 +14,28 @@ const $ = <T extends HTMLElement>(sel: string) => {
 const startBtn = $<HTMLButtonElement>("#start")
 const statusEl = $<HTMLSpanElement>("#status")
 const dotEl = $<HTMLSpanElement>("#status-dot")
+const langSel = $<HTMLSelectElement>("#lang")
+const otherEl = $<HTMLElement>("#pane-other")
+const enEl = $<HTMLElement>("#pane-en")
 
 const setStatus = (s: string) => { statusEl.textContent = s }
 const setDot = (kind: "neutral" | "success" | "error") => {
   dotEl.className = `status status-sm status-${kind}`
 }
 
-const zhPane = makePane($<HTMLElement>("#pane-zh"), "zh")
-const enPane = makePane($<HTMLElement>("#pane-en"), "en")
+const isOtherLang = (s: string): s is OtherLang => s === "zh" || s === "vi" || s === "ja"
 
-const route = (tokens: Token[]) => {
-  const zh: Token[] = []
-  const en: Token[] = []
-  for (const t of tokens) (t.language === "zh" ? zh : en).push(t)
-  zhPane.apply(zh)
-  enPane.apply(en)
-}
+const stored = localStorage.getItem(LANG_KEY)
+if (stored && isOtherLang(stored)) langSel.value = stored
+langSel.addEventListener("change", () => localStorage.setItem(LANG_KEY, langSel.value))
 
-let active: { mic: Mic; session: Session } | null = null
+let active: { mic: Mic; session: Session; otherPane: Pane; enPane: Pane; otherLang: OtherLang } | null = null
 
 const setRunning = (running: boolean) => {
   startBtn.textContent = running ? "Stop" : "Start"
   startBtn.classList.toggle("btn-primary", !running)
   startBtn.classList.toggle("btn-error", running)
+  langSel.disabled = running
   setDot(running ? "success" : "neutral")
 }
 
@@ -53,14 +53,34 @@ const start = async () => {
     setDot("error")
     return
   }
+  const otherLang = langSel.value
+  if (!isOtherLang(otherLang)) {
+    setStatus(`bad lang: ${otherLang}`)
+    setDot("error")
+    return
+  }
+
   startBtn.disabled = true
   setStatus("requesting mic")
+
+  otherEl.replaceChildren()
+  enEl.replaceChildren()
+  const otherPane = makePane(otherEl, otherLang)
+  const enPane = makePane(enEl, "en")
+
+  const route = (tokens: Token[]) => {
+    const other: Token[] = []
+    const en: Token[] = []
+    for (const t of tokens) (t.language === "en" ? en : other).push(t)
+    otherPane.apply(other)
+    enPane.apply(en)
+  }
 
   let mic: Mic
   try {
     let session: Session | null = null
     mic = await startMic((pcm) => session?.send(pcm))
-    session = startSession(apiKey, {
+    session = startSession(apiKey, otherLang, {
       onTokens: route,
       onStatus: setStatus,
       onError: (e) => {
@@ -70,7 +90,7 @@ const start = async () => {
         stop()
       },
     })
-    active = { mic, session }
+    active = { mic, session, otherPane, enPane, otherLang }
     setRunning(true)
   } catch (e) {
     console.error(e)

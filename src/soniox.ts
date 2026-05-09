@@ -1,6 +1,7 @@
 const URL = "wss://stt-rt.soniox.com/transcribe-websocket"
 
-export type Lang = "zh" | "en"
+export type OtherLang = "zh" | "vi" | "ja"
+export type Lang = OtherLang | "en"
 
 export type Token = {
   text: string
@@ -28,7 +29,7 @@ export type Session = {
   stop: () => void
 }
 
-export function startSession(apiKey: string, handlers: Handlers): Session {
+export function startSession(apiKey: string, otherLang: OtherLang, handlers: Handlers): Session {
   const { onTokens, onStatus, onError } = handlers
   const ws = new WebSocket(URL)
   ws.binaryType = "arraybuffer"
@@ -43,11 +44,11 @@ export function startSession(apiKey: string, handlers: Handlers): Session {
       audio_format: "pcm_s16le",
       sample_rate: 16000,
       num_channels: 1,
-      language_hints: ["zh", "en"],
+      language_hints: [otherLang, "en"],
       enable_language_identification: true,
       enable_speaker_diarization: true,
       enable_endpoint_detection: true,
-      translation: { type: "two_way", language_a: "zh", language_b: "en" },
+      translation: { type: "two_way", language_a: otherLang, language_b: "en" },
     }))
     open = true
     onStatus("listening")
@@ -68,7 +69,7 @@ export function startSession(apiKey: string, handlers: Handlers): Session {
     for (const t of raw) {
       if (!t.text) continue
       if (t.translation_status === "none") continue
-      const lang = t.language === "zh" || t.language === "en" ? t.language : null
+      const lang = t.language === otherLang || t.language === "en" ? t.language : null
       if (!lang) continue
       out.push({
         text: t.text,
