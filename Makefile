@@ -1,3 +1,6 @@
+install:
+	@if [ ! -d node_modules/vite ]; then bun add -D vite; fi
+
 build:
 	bun run build
 
