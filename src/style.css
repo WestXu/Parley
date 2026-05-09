@@ -5,8 +5,12 @@
   scrollbar-width: thin;
 }
 
+.pane:first-of-type {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+
 .pane:last-of-type {
-  @apply pb-20;
+  padding-bottom: 3.5rem;
 }
 
 .line {
