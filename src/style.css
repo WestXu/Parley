@@ -10,14 +10,14 @@
     padding-top: max(0.75rem, env(safe-area-inset-top));
   }
   .pane:last-of-type {
-    padding-bottom: 3.5rem;
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
   }
 }
 
 @media (orientation: landscape) {
   .pane {
     padding-top: max(0.75rem, env(safe-area-inset-top));
-    padding-bottom: 3.5rem;
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
   }
 }
 
