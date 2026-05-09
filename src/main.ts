@@ -1,6 +1,7 @@
 import { startMic, type Mic } from "./audio"
 import { startSession, LANGS, type Session, type Lang } from "./soniox"
 import { makeBoard, type Board } from "./render"
+import { isSpeaking } from "./tts"
 
 const apiKey = import.meta.env.VITE_SONIOX_API_KEY as string | undefined
 const KEY_A = "translate.langA"
@@ -119,7 +120,7 @@ const start = async () => {
   let mic: Mic
   try {
     let session: Session | null = null
-    mic = await startMic((pcm) => session?.send(pcm))
+    mic = await startMic((pcm) => { if (!isSpeaking()) session?.send(pcm) })
     session = startSession(apiKey, langA, langB, {
       onTokens: board.apply,
       onStatus: setStatus,
