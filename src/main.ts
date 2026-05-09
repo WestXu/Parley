@@ -56,8 +56,6 @@ langASel.addEventListener("change", onChange(langASel, langBSel, prevA))
 langBSel.addEventListener("change", onChange(langBSel, langASel, prevB))
 
 let active: { mic: Mic; session: Session; board: Board; langA: Lang; langB: Lang } | null = null
-let lastA: Lang | null = null
-let lastB: Lang | null = null
 let wakeLock: WakeLockSentinel | null = null
 
 const setRunning = (running: boolean) => {
@@ -105,16 +103,8 @@ const start = async () => {
   startBtn.disabled = true
   setStatus("requesting mic")
 
-  if (lastA !== langA || lastB !== langB) {
-    aEl.replaceChildren()
-    bEl.replaceChildren()
-  } else {
-    for (const el of [aEl, bEl]) {
-      for (const live of el.querySelectorAll(".live")) live.textContent = ""
-    }
-  }
-  lastA = langA
-  lastB = langB
+  aEl.replaceChildren()
+  bEl.replaceChildren()
   const board = makeBoard(aEl, langA, bEl, langB, delBtn)
 
   let mic: Mic
