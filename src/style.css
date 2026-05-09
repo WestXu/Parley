@@ -7,6 +7,10 @@
   scrollbar-width: thin;
 }
 
+main.top-rotated > section:first-child {
+  transform: rotate(180deg);
+}
+
 @media (orientation: portrait) {
   .pane:first-of-type {
     padding-top: max(0.75rem, env(safe-area-inset-top));

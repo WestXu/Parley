@@ -14,6 +14,7 @@ const $ = <T extends HTMLElement>(sel: string) => {
 
 const startBtn = $<HTMLButtonElement>("#start")
 const swapBtn = $<HTMLButtonElement>("#swap")
+const rotateBtn = $<HTMLButtonElement>("#rotate")
 const statusEl = $<HTMLSpanElement>("#status")
 const dotEl = $<HTMLSpanElement>("#status-dot")
 const langASel = $<HTMLSelectElement>("#lang-a")
@@ -148,4 +149,8 @@ swapBtn.addEventListener("click", () => {
   const last = main.lastElementChild
   if (first && last && first !== last) main.insertBefore(last, first)
   for (const el of [aEl, bEl]) el.scrollTop = el.scrollHeight
+})
+
+rotateBtn.addEventListener("click", () => {
+  aEl.parentElement?.classList.toggle("top-rotated")
 })
