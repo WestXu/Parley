@@ -121,4 +121,5 @@ swapBtn.addEventListener("click", () => {
   const first = main.firstElementChild
   const last = main.lastElementChild
   if (first && last && first !== last) main.insertBefore(last, first)
+  for (const el of [otherEl, enEl]) el.scrollTop = el.scrollHeight
 })
