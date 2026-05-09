@@ -154,3 +154,9 @@ swapBtn.addEventListener("click", () => {
 rotateBtn.addEventListener("click", () => {
   aEl.parentElement?.classList.toggle("top-rotated")
 })
+
+matchMedia("(orientation: portrait)").addEventListener("change", () => {
+  requestAnimationFrame(() => {
+    for (const el of [aEl, bEl]) el.scrollTop = el.scrollHeight
+  })
+})
