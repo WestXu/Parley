@@ -1,4 +1,5 @@
 import type { Lang, Token } from "./soniox"
+import { speak } from "./tts"
 
 export type Board = { apply: (tokens: Token[]) => void }
 
@@ -87,10 +88,6 @@ export function makeBoard(
   }
 
   const select = (s: Sentence) => {
-    if (selected === s) {
-      clearSelection()
-      return
-    }
     if (selected) {
       selected.span.classList.remove("selected")
       selected.partner?.span.classList.remove("selected")
@@ -149,7 +146,11 @@ export function makeBoard(
     if (!span) return
     const seg = byEl.get(span)
     if (!seg) return
-    select(seg)
+    if (span.classList.contains("selected")) {
+      speak(span.textContent ?? "", paneOf(seg.side).lang)
+    } else {
+      select(seg)
+    }
     e.stopPropagation()
   }
 
