@@ -12,6 +12,7 @@ const $ = <T extends HTMLElement>(sel: string) => {
 }
 
 const startBtn = $<HTMLButtonElement>("#start")
+const swapBtn = $<HTMLButtonElement>("#swap")
 const statusEl = $<HTMLSpanElement>("#status")
 const dotEl = $<HTMLSpanElement>("#status-dot")
 const langSel = $<HTMLSelectElement>("#lang")
@@ -104,4 +105,12 @@ const start = async () => {
 startBtn.addEventListener("click", () => {
   if (active) stop()
   else start()
+})
+
+swapBtn.addEventListener("click", () => {
+  const main = otherEl.parentElement
+  if (!main) return
+  const first = main.firstElementChild
+  const last = main.lastElementChild
+  if (first && last && first !== last) main.insertBefore(last, first)
 })

@@ -5,6 +5,10 @@
   scrollbar-width: thin;
 }
 
+.pane:last-of-type {
+  @apply pb-20;
+}
+
 .line {
   @apply text-xl leading-snug py-1;
 }
