@@ -31,6 +31,7 @@ if (stored && isOtherLang(stored)) langSel.value = stored
 langSel.addEventListener("change", () => localStorage.setItem(LANG_KEY, langSel.value))
 
 let active: { mic: Mic; session: Session; otherPane: Pane; enPane: Pane; otherLang: OtherLang } | null = null
+let lastLang: OtherLang | null = null
 
 const setRunning = (running: boolean) => {
   startBtn.textContent = running ? "Stop" : "Start"
@@ -64,8 +65,15 @@ const start = async () => {
   startBtn.disabled = true
   setStatus("requesting mic")
 
-  otherEl.replaceChildren()
-  enEl.replaceChildren()
+  if (lastLang !== otherLang) {
+    otherEl.replaceChildren()
+    enEl.replaceChildren()
+  } else {
+    for (const el of [otherEl, enEl]) {
+      for (const live of el.querySelectorAll(".live")) live.textContent = ""
+    }
+  }
+  lastLang = otherLang
   const otherPane = makePane(otherEl, otherLang)
   const enPane = makePane(enEl, "en")
 
