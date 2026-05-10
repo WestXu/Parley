@@ -1,8 +1,8 @@
 const URL = "wss://stt-rt.soniox.com/transcribe-websocket"
 
-export type Lang = "en" | "zh" | "vi" | "ja"
+export type Lang = "en" | "zh" | "vi" | "ja" | "th"
 
-export const LANGS: Lang[] = ["en", "zh", "vi", "ja"]
+export const LANGS: Lang[] = ["en", "zh", "vi", "ja", "th"]
 
 export type Token = {
   text: string

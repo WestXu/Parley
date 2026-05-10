@@ -5,6 +5,7 @@ const LOCALE: Record<Lang, string> = {
   zh: "zh-CN",
   vi: "vi-VN",
   ja: "ja-JP",
+  th: "th-TH",
 }
 
 const COOLDOWN_MS = 300
