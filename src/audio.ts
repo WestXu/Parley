@@ -8,7 +8,7 @@ export async function startMic(onFrame: (pcm: Int16Array) => void): Promise<Mic>
   })
 
   const ctx = new AudioContext({ sampleRate: 16000 })
-  await ctx.audioWorklet.addModule("/pcm-worklet.js")
+  await ctx.audioWorklet.addModule(`${import.meta.env.BASE_URL}pcm-worklet.js`)
 
   const src = ctx.createMediaStreamSource(stream)
   const node = new AudioWorkletNode(ctx, "pcm-worklet")
