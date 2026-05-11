@@ -10,6 +10,7 @@ export type Token = {
   speaker: number
   is_final: boolean
   status: "original" | "translation"
+  chunk_id: number | null
 }
 
 type RawToken = {
@@ -60,7 +61,7 @@ export function startSession(apiKey: string, langA: Lang, langB: Lang, handlers:
   }
 
   ws.onmessage = (e) => {
-    let msg: { tokens?: RawToken[]; error_code?: number | null; error_message?: string }
+    let msg: { tokens?: RawToken[]; error_code?: number | null; error_message?: string; final_audio_proc_ms?: number }
     try { msg = JSON.parse(e.data) } catch { return }
 
     if (msg.error_code) {
@@ -68,6 +69,7 @@ export function startSession(apiKey: string, langA: Lang, langB: Lang, handlers:
       return
     }
     const raw = msg.tokens ?? []
+    const chunk_id = typeof msg.final_audio_proc_ms === "number" ? msg.final_audio_proc_ms : null
     const out: Token[] = []
     for (const t of raw) {
       if (!t.text) continue
@@ -78,12 +80,14 @@ export function startSession(apiKey: string, langA: Lang, langB: Lang, handlers:
       const parsed = t.speaker == null ? NaN : Number(t.speaker)
       if (Number.isFinite(parsed)) lastSpeaker = parsed
       const speaker = Number.isFinite(parsed) ? parsed : (lastSpeaker ?? 0)
+      const is_final = t.is_final === true
       out.push({
         text: t.text,
         language: lang,
         speaker,
-        is_final: t.is_final === true,
+        is_final,
         status,
+        chunk_id: is_final ? chunk_id : null,
       })
     }
     if (out.length) onTokens(out)

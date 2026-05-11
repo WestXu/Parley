@@ -9,6 +9,7 @@ type Sentence = {
   span: HTMLSpanElement
   partner: Sentence | null
   side: Side
+  key: string
 }
 
 type Line = {
@@ -36,9 +37,12 @@ export function makeBoard(
   const a: PaneState = { root: aEl, lang: langA, line: null }
   const b: PaneState = { root: bEl, lang: langB, line: null }
 
-  const unpaired = new Map<number, { a: Sentence[]; b: Sentence[] }>()
+  const chunks = new Map<string, Sentence>()
   const byEl = new WeakMap<HTMLSpanElement, Sentence>()
   let selected: Sentence | null = null
+
+  const chunkKey = (speaker: number, chunk_id: number, side: Side) =>
+    `${speaker}-${chunk_id}-${side}`
 
   const delBtn2 = delBtn.cloneNode(true) as HTMLButtonElement
   delBtn2.id = `${delBtn.id}-2`
@@ -127,11 +131,20 @@ export function makeBoard(
     const pane = paneOf(s.side)
     const line = s.span.parentElement as HTMLParagraphElement | null
     byEl.delete(s.span)
+    chunks.delete(s.key)
     s.span.remove()
     if (line) pruneLine(pane, line)
   }
 
-  const addSentence = (side: Side, speaker: number, text: string) => {
+  const addToChunk = (side: Side, speaker: number, chunk_id: number, text: string) => {
+    const key = chunkKey(speaker, chunk_id, side)
+    const existing = chunks.get(key)
+    if (existing) {
+      existing.span.textContent = (existing.span.textContent ?? "") + text
+      if (selected === existing || selected?.partner === existing) positionDelBtn()
+      return
+    }
+
     const pane = paneOf(side)
     const line = ensureLine(pane, speaker)
 
@@ -140,21 +153,18 @@ export function makeBoard(
     span.textContent = text
     line.el.insertBefore(span, line.liveEl)
 
-    const seg: Sentence = { span, partner: null, side }
+    const seg: Sentence = { span, partner: null, side, key }
     byEl.set(span, seg)
+    chunks.set(key, seg)
 
-    let queue = unpaired.get(speaker)
-    if (!queue) {
-      queue = { a: [], b: [] }
-      unpaired.set(speaker, queue)
-    }
-    const other = side === "a" ? "b" : "a"
-    const peer = queue[other].shift()
-    if (peer) {
-      seg.partner = peer
-      peer.partner = seg
-    } else {
-      queue[side].push(seg)
+    const partner = chunks.get(chunkKey(speaker, chunk_id, side === "a" ? "b" : "a"))
+    if (partner) {
+      seg.partner = partner
+      partner.partner = seg
+      if (selected === partner) {
+        seg.span.classList.add("selected")
+        positionDelBtn()
+      }
     }
   }
 
@@ -221,7 +231,8 @@ export function makeBoard(
       line.liveEl.textContent = (line.liveEl.textContent ?? "") + text
       return
     }
-    addSentence(side, head.speaker, text)
+    if (head.chunk_id == null) return
+    addToChunk(side, head.speaker, head.chunk_id, text)
   }
 
   const apply = (tokens: Token[]) => {
