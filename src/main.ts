@@ -145,12 +145,11 @@ startBtn.addEventListener("click", () => {
 })
 
 swapBtn.addEventListener("click", () => {
-  const main = aEl.parentElement
-  if (!main) return
-  const first = main.firstElementChild
-  const last = main.lastElementChild
-  if (first && last && first !== last) main.insertBefore(last, first)
-  for (const el of [aEl, bEl]) el.scrollTop = el.scrollHeight
+  for (const el of [aEl, bEl]) {
+    el.classList.toggle("is-top")
+    el.classList.toggle("is-bottom")
+    el.scrollTop = el.scrollHeight
+  }
 })
 
 rotateBtn.addEventListener("click", () => {

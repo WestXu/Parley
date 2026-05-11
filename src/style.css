@@ -11,7 +11,10 @@
 :lang(ja) { font-family: "Hiragino Mincho ProN", "Noto Serif JP", "YuMincho", ui-serif, serif; }
 :lang(th) { font-family: "Sarabun", "Noto Sans Thai", ui-sans-serif, sans-serif; }
 
-main.top-rotated > section:first-child {
+.is-top { order: 1; }
+.is-bottom { order: 2; }
+
+main.top-rotated .is-top {
   transform: rotate(180deg);
 }
 
@@ -22,12 +25,8 @@ body.running #start { @apply btn-error; }
 body:not(.running) #start { @apply btn-primary; }
 
 @media (orientation: portrait) {
-  .pane:first-of-type {
-    padding-top: max(0.75rem, env(safe-area-inset-top));
-  }
-  .pane:last-of-type {
-    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
-  }
+  .is-top { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+  .is-bottom { padding-bottom: calc(3.5rem + env(safe-area-inset-bottom)); }
 }
 
 @media (orientation: landscape) {
