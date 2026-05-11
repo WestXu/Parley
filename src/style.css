@@ -63,7 +63,6 @@ body:not(.running) #start { @apply btn-primary; }
 .line[data-speaker="4"] { --hl: var(--color-accent); }
 
 .sentence {
-  position: relative;
   cursor: pointer;
   border: 1px dashed transparent;
   border-radius: 0.25rem;
@@ -78,10 +77,10 @@ body:not(.running) #start { @apply btn-primary; }
 
 .sentence .del {
   display: none;
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
+  vertical-align: middle;
+  top: -0.1em;
+  margin-left: -1em;
   width: 1em;
   height: 1em;
   border-radius: 9999px;
@@ -103,7 +102,7 @@ body:not(.running) #start { @apply btn-primary; }
 }
 .sentence .del::before { transform: rotate(45deg); }
 .sentence .del::after { transform: rotate(-45deg); }
-.sentence.selected .del { display: block; }
+.sentence.selected .del { display: inline-block; }
 
 .tok {
   opacity: calc(0.5 + 0.5 * var(--c));
