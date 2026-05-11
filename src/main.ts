@@ -40,20 +40,20 @@ const syncOptions = () => {
   for (const opt of langASel.options) opt.hidden = opt.value === langBSel.value
   for (const opt of langBSel.options) opt.hidden = opt.value === langASel.value
 }
-syncOptions()
 
-const onChange = (self: HTMLSelectElement, other: HTMLSelectElement, prev: { value: string }) => () => {
-  if (self.value === other.value) other.value = prev.value
-  prev.value = self.value
+const onLangChange = (changed: HTMLSelectElement, other: HTMLSelectElement) => () => {
+  if (changed.value === other.value) {
+    const alt = Array.from(other.options).find((o) => o.value !== changed.value)
+    if (alt) other.value = alt.value
+  }
   localStorage.setItem(KEY_A, langASel.value)
   localStorage.setItem(KEY_B, langBSel.value)
   syncOptions()
 }
 
-const prevA = { value: langASel.value }
-const prevB = { value: langBSel.value }
-langASel.addEventListener("change", onChange(langASel, langBSel, prevA))
-langBSel.addEventListener("change", onChange(langBSel, langASel, prevB))
+syncOptions()
+langASel.addEventListener("change", onLangChange(langASel, langBSel))
+langBSel.addEventListener("change", onLangChange(langBSel, langASel))
 
 let active: { mic: Mic; session: Session; board: Board; langA: Lang; langB: Lang } | null = null
 let wakeLock: WakeLockSentinel | null = null
