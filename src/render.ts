@@ -175,12 +175,6 @@ export function makeBoard(
   aEl.addEventListener("click", onPaneClick)
   bEl.addEventListener("click", onPaneClick)
 
-  document.addEventListener("click", (e) => {
-    const target = e.target as Element | null
-    if (target && target.closest(".sentence")) return
-    clearSelection()
-  })
-
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") clearSelection()
   })
