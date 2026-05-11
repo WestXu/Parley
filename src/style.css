@@ -75,20 +75,31 @@ body:not(.running) #start { @apply btn-primary; }
 
 .sentence .del {
   display: none;
+  position: relative;
   vertical-align: middle;
   margin: 0 0.125rem;
-  width: 1.1em;
-  height: 1.1em;
+  width: 1em;
+  height: 1em;
   border-radius: 9999px;
   border: 0;
   background-color: var(--color-error);
   color: var(--color-error-content);
-  font-size: 0.75em;
-  line-height: 1;
   cursor: pointer;
 }
-.sentence .del::before { content: "×"; }
-.sentence.selected .del { display: inline-flex; align-items: center; justify-content: center; }
+.sentence .del::before,
+.sentence .del::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 25%;
+  right: 25%;
+  height: 1.5px;
+  background-color: currentColor;
+  border-radius: 1px;
+}
+.sentence .del::before { transform: rotate(45deg); }
+.sentence .del::after { transform: rotate(-45deg); }
+.sentence.selected .del { display: inline-block; }
 
 .tok {
   opacity: calc(0.5 + 0.5 * var(--c));
