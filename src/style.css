@@ -7,10 +7,6 @@
   scrollbar-width: thin;
 }
 
-:lang(zh) { font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", ui-serif, serif; }
-:lang(ja) { font-family: "Hiragino Mincho ProN", "Noto Serif JP", "YuMincho", ui-serif, serif; }
-:lang(th) { font-family: "Sarabun", "Noto Sans Thai", ui-sans-serif, sans-serif; }
-
 .is-top { order: 1; }
 .is-bottom { order: 2; }
 
