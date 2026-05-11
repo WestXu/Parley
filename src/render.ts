@@ -136,11 +136,19 @@ export function makeBoard(
     if (line) pruneLine(pane, line)
   }
 
-  const addToChunk = (side: Side, speaker: number, chunk_id: number, text: string) => {
+  const makeTok = (t: Token): HTMLSpanElement => {
+    const s = document.createElement("span")
+    s.className = "tok"
+    s.style.setProperty("--c", String(t.confidence))
+    s.textContent = t.text
+    return s
+  }
+
+  const addToChunk = (side: Side, speaker: number, chunk_id: number, tokens: Token[]) => {
     const key = chunkKey(speaker, chunk_id, side)
     const existing = chunks.get(key)
     if (existing) {
-      existing.span.textContent = (existing.span.textContent ?? "") + text
+      for (const t of tokens) existing.span.appendChild(makeTok(t))
       if (selected === existing || selected?.partner === existing) positionDelBtn()
       return
     }
@@ -150,7 +158,7 @@ export function makeBoard(
 
     const span = document.createElement("span")
     span.className = "sentence"
-    span.textContent = text
+    for (const t of tokens) span.appendChild(makeTok(t))
     line.el.insertBefore(span, line.liveEl)
 
     const seg: Sentence = { span, partner: null, side, key }
@@ -224,15 +232,15 @@ export function makeBoard(
     const head = run[0]!
     const side = sideOf(head.language)
     const pane = paneOf(side)
-    const text = run.map((t) => t.text).join("")
 
     if (!head.is_final) {
       const line = ensureLine(pane, head.speaker)
+      const text = run.map((t) => t.text).join("")
       line.liveEl.textContent = (line.liveEl.textContent ?? "") + text
       return
     }
     if (head.chunk_id == null) return
-    addToChunk(side, head.speaker, head.chunk_id, text)
+    addToChunk(side, head.speaker, head.chunk_id, run)
   }
 
   const apply = (tokens: Token[]) => {

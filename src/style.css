@@ -67,3 +67,7 @@ main.top-rotated > section:first-child {
   border-color: var(--hl);
   background-color: color-mix(in srgb, var(--hl) 20%, transparent);
 }
+
+.tok {
+  opacity: calc(0.5 + 0.5 * var(--c));
+}

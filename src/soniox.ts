@@ -11,6 +11,7 @@ export type Token = {
   is_final: boolean
   status: "original" | "translation"
   chunk_id: number | null
+  confidence: number
 }
 
 type RawToken = {
@@ -19,6 +20,7 @@ type RawToken = {
   speaker?: string | number
   is_final?: boolean
   translation_status?: "none" | "original" | "translation"
+  confidence?: number
 }
 
 type Handlers = {
@@ -88,6 +90,7 @@ export function startSession(apiKey: string, langA: Lang, langB: Lang, handlers:
         is_final,
         status,
         chunk_id: is_final ? chunk_id : null,
+        confidence: typeof t.confidence === "number" ? t.confidence : 1,
       })
     }
     if (out.length) onTokens(out)
