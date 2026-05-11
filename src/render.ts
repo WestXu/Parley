@@ -40,6 +40,10 @@ export function makeBoard(
   const byEl = new WeakMap<HTMLSpanElement, Sentence>()
   let selected: Sentence | null = null
 
+  const delBtn2 = delBtn.cloneNode(true) as HTMLButtonElement
+  delBtn2.id = `${delBtn.id}-2`
+  delBtn.parentElement?.insertBefore(delBtn2, delBtn.nextSibling)
+
   const sideOf = (lang: Lang): Side => (lang === langA ? "a" : "b")
   const paneOf = (side: Side): PaneState => (side === "a" ? a : b)
 
@@ -68,15 +72,26 @@ export function makeBoard(
     return pane.line
   }
 
-  const positionDelBtn = () => {
-    if (!selected) return
-    const rects = selected.span.getClientRects()
+  const placeBtn = (btn: HTMLButtonElement, span: HTMLSpanElement) => {
+    const rects = span.getClientRects()
     const last = rects[rects.length - 1]
     if (!last) return
-    const w = delBtn.offsetWidth
-    const h = delBtn.offsetHeight
-    delBtn.style.left = `${last.right - w / 2}px`
-    delBtn.style.top = `${last.top + (last.height - h) / 2}px`
+    const w = btn.offsetWidth
+    const h = btn.offsetHeight
+    btn.style.left = `${last.right - w / 2}px`
+    btn.style.top = `${last.top + (last.height - h) / 2}px`
+  }
+
+  const positionDelBtn = () => {
+    if (!selected) return
+    delBtn.style.display = "flex"
+    placeBtn(delBtn, selected.span)
+    if (selected.partner) {
+      delBtn2.style.display = "flex"
+      placeBtn(delBtn2, selected.partner.span)
+    } else {
+      delBtn2.style.display = "none"
+    }
   }
 
   const clearSelection = () => {
@@ -85,6 +100,7 @@ export function makeBoard(
     selected.partner?.span.classList.remove("selected")
     selected = null
     delBtn.style.display = "none"
+    delBtn2.style.display = "none"
   }
 
   const select = (s: Sentence) => {
@@ -95,7 +111,6 @@ export function makeBoard(
     selected = s
     s.span.classList.add("selected")
     s.partner?.span.classList.add("selected")
-    delBtn.style.display = "flex"
     positionDelBtn()
   }
 
@@ -168,11 +183,11 @@ export function makeBoard(
     const target = e.target as Node | null
     if (!target) return
     if (target instanceof Element && target.closest(".sentence")) return
-    if (delBtn.contains(target)) return
+    if (delBtn.contains(target) || delBtn2.contains(target)) return
     clearSelection()
   })
 
-  delBtn.addEventListener("click", (e) => {
+  const onDelClick = (e: MouseEvent) => {
     e.stopPropagation()
     if (!selected) return
     const partner = selected.partner
@@ -180,7 +195,10 @@ export function makeBoard(
     if (partner) removeSentence(partner)
     selected = null
     delBtn.style.display = "none"
-  })
+    delBtn2.style.display = "none"
+  }
+  delBtn.addEventListener("click", onDelClick)
+  delBtn2.addEventListener("click", onDelClick)
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") clearSelection()
