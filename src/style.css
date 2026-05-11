@@ -18,6 +18,9 @@ main.top-rotated > section:first-child {
 #rotate { transition: transform .25s; }
 #rotate.rotated { transform: rotate(180deg); }
 
+body.running #start { @apply btn-error; }
+body:not(.running) #start { @apply btn-primary; }
+
 @media (orientation: portrait) {
   .pane:first-of-type {
     padding-top: max(0.75rem, env(safe-area-inset-top));

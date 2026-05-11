@@ -67,12 +67,9 @@ let active: { mic: Mic; session: Session; board: Board; langA: Lang; langB: Lang
 let wakeLock: WakeLockSentinel | null = null
 
 const setRunning = (running: boolean) => {
+  document.body.classList.toggle("running", running)
   startBtn.textContent = running ? "Stop" : "Start"
-  startBtn.classList.toggle("btn-primary", !running)
-  startBtn.classList.toggle("btn-error", running)
-  langASel.disabled = running
-  langBSel.disabled = running
-  swapLangsBtn.disabled = running
+  for (const el of [langASel, langBSel, swapLangsBtn]) el.disabled = running
   setDot(running ? "success" : "neutral")
 }
 
