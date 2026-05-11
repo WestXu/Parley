@@ -87,22 +87,16 @@ export function makeBoard(
     partnerOf(span)?.classList.add("selected")
   }
 
-  const pruneLine = (pane: PaneState, line: HTMLParagraphElement) => {
-    const hasSentence = line.querySelector(".sentence")
-    const live = line.querySelector(".live")
-    const liveEmpty = !live || !live.textContent
-    if (hasSentence || !liveEmpty) return
-    if (pane.line && pane.line.el === line) pane.line = null
-    line.remove()
-  }
-
   const removeSentence = (span: HTMLSpanElement) => {
     const pane = paneOf(sideOfSpan(span))
     const line = span.parentElement as HTMLParagraphElement | null
     const key = span.dataset.key
     if (key) chunks.delete(key)
     span.remove()
-    if (line) pruneLine(pane, line)
+    if (!line || line.querySelector(".sentence")) return
+    if (line.querySelector(".live")?.textContent) return
+    if (pane.line?.el === line) pane.line = null
+    line.remove()
   }
 
   const makeTok = (t: Token): HTMLSpanElement => {
