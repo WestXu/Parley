@@ -148,6 +148,7 @@ swapBtn.addEventListener("click", () => {
 })
 
 rotateBtn.addEventListener("click", () => {
+  rotateBtn.classList.toggle("rotated")
   aEl.parentElement?.classList.toggle("top-rotated")
 })
 
