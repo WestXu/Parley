@@ -5,13 +5,6 @@ export type Board = { apply: (tokens: Token[]) => void }
 
 type Side = "a" | "b"
 
-type Sentence = {
-  span: HTMLSpanElement
-  partner: Sentence | null
-  side: Side
-  key: string
-}
-
 type Line = {
   el: HTMLParagraphElement
   liveEl: HTMLSpanElement
@@ -37,12 +30,17 @@ export function makeBoard(
   const a: PaneState = { root: aEl, lang: langA, line: null }
   const b: PaneState = { root: bEl, lang: langB, line: null }
 
-  const chunks = new Map<string, Sentence>()
-  const byEl = new WeakMap<HTMLSpanElement, Sentence>()
-  let selected: Sentence | null = null
+  const chunks = new Map<string, HTMLSpanElement>()
+  let selected: HTMLSpanElement | null = null
 
   const chunkKey = (speaker: number, chunk_id: number, side: Side) =>
     `${speaker}-${chunk_id}-${side}`
+  const flipKey = (key: string) => key.slice(0, -1) + (key.endsWith("a") ? "b" : "a")
+  const partnerOf = (span: HTMLSpanElement) => {
+    const key = span.dataset.key
+    return key ? chunks.get(flipKey(key)) ?? null : null
+  }
+  const sideOfSpan = (span: HTMLSpanElement): Side => span.dataset.side as Side
 
   const delBtn2 = delBtn.cloneNode(true) as HTMLButtonElement
   delBtn2.id = `${delBtn.id}-2`
@@ -89,10 +87,11 @@ export function makeBoard(
   const positionDelBtn = () => {
     if (!selected) return
     delBtn.style.display = "flex"
-    placeBtn(delBtn, selected.span)
-    if (selected.partner) {
+    placeBtn(delBtn, selected)
+    const partner = partnerOf(selected)
+    if (partner) {
       delBtn2.style.display = "flex"
-      placeBtn(delBtn2, selected.partner.span)
+      placeBtn(delBtn2, partner)
     } else {
       delBtn2.style.display = "none"
     }
@@ -100,21 +99,21 @@ export function makeBoard(
 
   const clearSelection = () => {
     if (!selected) return
-    selected.span.classList.remove("selected")
-    selected.partner?.span.classList.remove("selected")
+    selected.classList.remove("selected")
+    partnerOf(selected)?.classList.remove("selected")
     selected = null
     delBtn.style.display = "none"
     delBtn2.style.display = "none"
   }
 
-  const select = (s: Sentence) => {
+  const select = (span: HTMLSpanElement) => {
     if (selected) {
-      selected.span.classList.remove("selected")
-      selected.partner?.span.classList.remove("selected")
+      selected.classList.remove("selected")
+      partnerOf(selected)?.classList.remove("selected")
     }
-    selected = s
-    s.span.classList.add("selected")
-    s.partner?.span.classList.add("selected")
+    selected = span
+    span.classList.add("selected")
+    partnerOf(span)?.classList.add("selected")
     positionDelBtn()
   }
 
@@ -127,12 +126,12 @@ export function makeBoard(
     line.remove()
   }
 
-  const removeSentence = (s: Sentence) => {
-    const pane = paneOf(s.side)
-    const line = s.span.parentElement as HTMLParagraphElement | null
-    byEl.delete(s.span)
-    chunks.delete(s.key)
-    s.span.remove()
+  const removeSentence = (span: HTMLSpanElement) => {
+    const pane = paneOf(sideOfSpan(span))
+    const line = span.parentElement as HTMLParagraphElement | null
+    const key = span.dataset.key
+    if (key) chunks.delete(key)
+    span.remove()
     if (line) pruneLine(pane, line)
   }
 
@@ -148,8 +147,10 @@ export function makeBoard(
     const key = chunkKey(speaker, chunk_id, side)
     const existing = chunks.get(key)
     if (existing) {
-      for (const t of tokens) existing.span.appendChild(makeTok(t))
-      if (selected === existing || selected?.partner === existing) positionDelBtn()
+      for (const t of tokens) existing.appendChild(makeTok(t))
+      if (selected && (selected === existing || partnerOf(selected) === existing)) {
+        positionDelBtn()
+      }
       return
     }
 
@@ -158,21 +159,16 @@ export function makeBoard(
 
     const span = document.createElement("span")
     span.className = "sentence"
+    span.dataset.key = key
+    span.dataset.side = side
     for (const t of tokens) span.appendChild(makeTok(t))
     line.el.insertBefore(span, line.liveEl)
+    chunks.set(key, span)
 
-    const seg: Sentence = { span, partner: null, side, key }
-    byEl.set(span, seg)
-    chunks.set(key, seg)
-
-    const partner = chunks.get(chunkKey(speaker, chunk_id, side === "a" ? "b" : "a"))
-    if (partner) {
-      seg.partner = partner
-      partner.partner = seg
-      if (selected === partner) {
-        seg.span.classList.add("selected")
-        positionDelBtn()
-      }
+    const partner = chunks.get(flipKey(key))
+    if (partner && selected === partner) {
+      span.classList.add("selected")
+      positionDelBtn()
     }
   }
 
@@ -180,12 +176,10 @@ export function makeBoard(
     const target = e.target as HTMLElement | null
     const span = target?.closest(".sentence") as HTMLSpanElement | null
     if (!span) return
-    const seg = byEl.get(span)
-    if (!seg) return
     if (span.classList.contains("selected")) {
-      speak(span.textContent ?? "", paneOf(seg.side).lang)
+      speak(span.textContent ?? "", paneOf(sideOfSpan(span)).lang)
     } else {
-      select(seg)
+      select(span)
     }
     e.stopPropagation()
   }
@@ -208,7 +202,7 @@ export function makeBoard(
   const onDelClick = (e: MouseEvent) => {
     e.stopPropagation()
     if (!selected) return
-    const partner = selected.partner
+    const partner = partnerOf(selected)
     removeSentence(selected)
     if (partner) removeSentence(partner)
     selected = null
