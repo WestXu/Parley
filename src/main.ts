@@ -22,7 +22,6 @@ const langASel = $<HTMLSelectElement>("#lang-a")
 const langBSel = $<HTMLSelectElement>("#lang-b")
 const aEl = $<HTMLElement>("#pane-a")
 const bEl = $<HTMLElement>("#pane-b")
-const delBtn = $<HTMLButtonElement>("#del-btn")
 const swapLangsBtn = $<HTMLButtonElement>("#swap-langs")
 
 const setStatus = (s: string) => { statusEl.textContent = s }
@@ -111,7 +110,7 @@ const start = async () => {
 
   aEl.replaceChildren()
   bEl.replaceChildren()
-  const board = makeBoard(aEl, langA, bEl, langB, delBtn)
+  const board = makeBoard(aEl, langA, bEl, langB)
 
   let mic: Mic
   try {

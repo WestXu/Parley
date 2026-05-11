@@ -22,7 +22,6 @@ export function makeBoard(
   langA: Lang,
   bEl: HTMLElement,
   langB: Lang,
-  delBtn: HTMLButtonElement,
 ): Board {
   aEl.lang = langA
   bEl.lang = langB
@@ -41,10 +40,6 @@ export function makeBoard(
     return key ? chunks.get(flipKey(key)) ?? null : null
   }
   const sideOfSpan = (span: HTMLSpanElement): Side => span.dataset.side as Side
-
-  const delBtn2 = delBtn.cloneNode(true) as HTMLButtonElement
-  delBtn2.id = `${delBtn.id}-2`
-  delBtn.parentElement?.insertBefore(delBtn2, delBtn.nextSibling)
 
   const sideOf = (lang: Lang): Side => (lang === langA ? "a" : "b")
   const paneOf = (side: Side): PaneState => (side === "a" ? a : b)
@@ -74,39 +69,15 @@ export function makeBoard(
     return pane.line
   }
 
-  const placeBtn = (btn: HTMLButtonElement, span: HTMLSpanElement) => {
-    const rects = span.getClientRects()
-    const last = rects[rects.length - 1]
-    if (!last) return
-    const w = btn.offsetWidth
-    const h = btn.offsetHeight
-    btn.style.left = `${last.right - w / 2}px`
-    btn.style.top = `${last.top + (last.height - h) / 2}px`
-  }
-
-  const positionDelBtn = () => {
-    if (!selected) return
-    delBtn.style.display = "flex"
-    placeBtn(delBtn, selected)
-    const partner = partnerOf(selected)
-    if (partner) {
-      delBtn2.style.display = "flex"
-      placeBtn(delBtn2, partner)
-    } else {
-      delBtn2.style.display = "none"
-    }
-  }
-
   const clearSelection = () => {
     if (!selected) return
     selected.classList.remove("selected")
     partnerOf(selected)?.classList.remove("selected")
     selected = null
-    delBtn.style.display = "none"
-    delBtn2.style.display = "none"
   }
 
   const select = (span: HTMLSpanElement) => {
+    if (selected === span) return
     if (selected) {
       selected.classList.remove("selected")
       partnerOf(selected)?.classList.remove("selected")
@@ -114,7 +85,6 @@ export function makeBoard(
     selected = span
     span.classList.add("selected")
     partnerOf(span)?.classList.add("selected")
-    positionDelBtn()
   }
 
   const pruneLine = (pane: PaneState, line: HTMLParagraphElement) => {
@@ -147,10 +117,8 @@ export function makeBoard(
     const key = chunkKey(speaker, chunk_id, side)
     const existing = chunks.get(key)
     if (existing) {
-      for (const t of tokens) existing.appendChild(makeTok(t))
-      if (selected && (selected === existing || partnerOf(selected) === existing)) {
-        positionDelBtn()
-      }
+      const del = existing.querySelector(".del")
+      for (const t of tokens) existing.insertBefore(makeTok(t), del)
       return
     }
 
@@ -162,55 +130,56 @@ export function makeBoard(
     span.dataset.key = key
     span.dataset.side = side
     for (const t of tokens) span.appendChild(makeTok(t))
+
+    const del = document.createElement("button")
+    del.className = "del"
+    del.setAttribute("aria-label", "delete")
+    span.appendChild(del)
+
     line.el.insertBefore(span, line.liveEl)
     chunks.set(key, span)
 
     const partner = chunks.get(flipKey(key))
-    if (partner && selected === partner) {
-      span.classList.add("selected")
-      positionDelBtn()
-    }
+    if (partner && selected === partner) span.classList.add("selected")
   }
 
-  const onRootClick = (e: MouseEvent) => {
+  const onPaneClick = (e: MouseEvent) => {
     const target = e.target as HTMLElement | null
-    const span = target?.closest(".sentence") as HTMLSpanElement | null
-    if (!span) return
+    if (!target) return
+
+    const del = target.closest(".del") as HTMLElement | null
+    if (del) {
+      const span = del.parentElement as HTMLSpanElement | null
+      if (!span) return
+      e.stopPropagation()
+      const partner = partnerOf(span)
+      if (selected === span || selected === partner) selected = null
+      removeSentence(span)
+      if (partner) removeSentence(partner)
+      return
+    }
+
+    const span = target.closest(".sentence") as HTMLSpanElement | null
+    if (!span) {
+      clearSelection()
+      return
+    }
+    e.stopPropagation()
     if (span.classList.contains("selected")) {
       speak(span.textContent ?? "", paneOf(sideOfSpan(span)).lang)
     } else {
       select(span)
     }
-    e.stopPropagation()
   }
 
-  aEl.addEventListener("click", onRootClick)
-  bEl.addEventListener("click", onRootClick)
-
-  aEl.addEventListener("scroll", positionDelBtn, { passive: true })
-  bEl.addEventListener("scroll", positionDelBtn, { passive: true })
-  window.addEventListener("resize", positionDelBtn)
+  aEl.addEventListener("click", onPaneClick)
+  bEl.addEventListener("click", onPaneClick)
 
   document.addEventListener("click", (e) => {
-    const target = e.target as Node | null
-    if (!target) return
-    if (target instanceof Element && target.closest(".sentence")) return
-    if (delBtn.contains(target) || delBtn2.contains(target)) return
+    const target = e.target as Element | null
+    if (target && target.closest(".sentence")) return
     clearSelection()
   })
-
-  const onDelClick = (e: MouseEvent) => {
-    e.stopPropagation()
-    if (!selected) return
-    const partner = partnerOf(selected)
-    removeSentence(selected)
-    if (partner) removeSentence(partner)
-    selected = null
-    delBtn.style.display = "none"
-    delBtn2.style.display = "none"
-  }
-  delBtn.addEventListener("click", onDelClick)
-  delBtn2.addEventListener("click", onDelClick)
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") clearSelection()
@@ -255,7 +224,6 @@ export function makeBoard(
 
     aEl.scrollTop = aEl.scrollHeight
     bEl.scrollTop = bEl.scrollHeight
-    positionDelBtn()
   }
 
   return { apply }

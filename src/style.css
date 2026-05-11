@@ -76,6 +76,23 @@ body:not(.running) #start { @apply btn-primary; }
   background-color: color-mix(in srgb, var(--hl) 20%, transparent);
 }
 
+.sentence .del {
+  display: none;
+  vertical-align: middle;
+  margin: 0 0.125rem;
+  width: 1.1em;
+  height: 1.1em;
+  border-radius: 9999px;
+  border: 0;
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+  font-size: 0.75em;
+  line-height: 1;
+  cursor: pointer;
+}
+.sentence .del::before { content: "×"; }
+.sentence.selected .del { display: inline-flex; align-items: center; justify-content: center; }
+
 .tok {
   opacity: calc(0.5 + 0.5 * var(--c));
 }
