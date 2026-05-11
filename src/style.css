@@ -62,13 +62,14 @@ body:not(.running) #start { @apply btn-primary; }
 
 .sentence {
   cursor: pointer;
+  border: 1px dashed transparent;
   border-radius: 0.25rem;
   padding: 0 0.125rem;
-  transition: background-color 120ms, box-shadow 120ms;
+  transition: background-color 120ms, border-color 120ms;
 }
 
 .sentence.selected {
-  box-shadow: inset 0 0 0 1px var(--hl);
+  border-color: var(--hl);
   background-color: color-mix(in srgb, var(--hl) 20%, transparent);
 }
 
