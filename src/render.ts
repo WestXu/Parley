@@ -36,7 +36,7 @@ export function makeBoard(
   const a: PaneState = { root: aEl, lang: langA, line: null }
   const b: PaneState = { root: bEl, lang: langB, line: null }
 
-  const pending = new Map<string, Sentence>()
+  const unpaired = new Map<number, { a: Sentence[]; b: Sentence[] }>()
   const byEl = new WeakMap<HTMLSpanElement, Sentence>()
   let selected: Sentence | null = null
 
@@ -116,7 +116,7 @@ export function makeBoard(
     if (line) pruneLine(pane, line)
   }
 
-  const addSentence = (side: Side, speaker: number, text: string, key: string, status: "original" | "translation") => {
+  const addSentence = (side: Side, speaker: number, text: string) => {
     const pane = paneOf(side)
     const line = ensureLine(pane, speaker)
 
@@ -128,15 +128,18 @@ export function makeBoard(
     const seg: Sentence = { span, partner: null, side }
     byEl.set(span, seg)
 
-    if (status === "original") {
-      pending.set(key, seg)
-      return
+    let queue = unpaired.get(speaker)
+    if (!queue) {
+      queue = { a: [], b: [] }
+      unpaired.set(speaker, queue)
     }
-    const orig = pending.get(key)
-    if (orig) {
-      seg.partner = orig
-      orig.partner = seg
-      pending.delete(key)
+    const other = side === "a" ? "b" : "a"
+    const peer = queue[other].shift()
+    if (peer) {
+      seg.partner = peer
+      peer.partner = seg
+    } else {
+      queue[side].push(seg)
     }
   }
 
@@ -186,8 +189,7 @@ export function makeBoard(
   const sameRun = (x: Token, y: Token) =>
     x.is_final === y.is_final &&
     x.language === y.language &&
-    x.speaker === y.speaker &&
-    x.boundary_ms === y.boundary_ms
+    x.speaker === y.speaker
 
   const flushRun = (run: Token[]) => {
     if (!run.length) return
@@ -201,7 +203,7 @@ export function makeBoard(
       line.liveEl.textContent = (line.liveEl.textContent ?? "") + text
       return
     }
-    addSentence(side, head.speaker, text, `${head.speaker}-${head.boundary_ms}`, head.status)
+    addSentence(side, head.speaker, text)
   }
 
   const apply = (tokens: Token[]) => {
