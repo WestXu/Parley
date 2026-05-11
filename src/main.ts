@@ -23,6 +23,7 @@ const langBSel = $<HTMLSelectElement>("#lang-b")
 const aEl = $<HTMLElement>("#pane-a")
 const bEl = $<HTMLElement>("#pane-b")
 const delBtn = $<HTMLButtonElement>("#del-btn")
+const swapLangsBtn = $<HTMLButtonElement>("#swap-langs")
 
 const setStatus = (s: string) => { statusEl.textContent = s }
 const setDot = (kind: "neutral" | "success" | "error") => {
@@ -55,6 +56,13 @@ syncOptions()
 langASel.addEventListener("change", onLangChange(langASel, langBSel))
 langBSel.addEventListener("change", onLangChange(langBSel, langASel))
 
+swapLangsBtn.addEventListener("click", () => {
+  const a = langASel.value
+  langASel.value = langBSel.value
+  langBSel.value = a
+  langASel.dispatchEvent(new Event("change"))
+})
+
 let active: { mic: Mic; session: Session; board: Board; langA: Lang; langB: Lang } | null = null
 let wakeLock: WakeLockSentinel | null = null
 
@@ -64,6 +72,7 @@ const setRunning = (running: boolean) => {
   startBtn.classList.toggle("btn-error", running)
   langASel.disabled = running
   langBSel.disabled = running
+  swapLangsBtn.disabled = running
   setDot(running ? "success" : "neutral")
 }
 
