@@ -34,14 +34,12 @@ body:not(.running) #start { @apply btn-primary; }
 
 .line {
   @apply text-xl leading-snug py-1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem 0.5rem;
 }
 
 .speaker-badge {
-  @apply badge badge-soft badge-sm;
+  @apply badge badge-soft badge-sm align-middle mr-2;
+  position: relative;
+  top: -0.1em;
 }
 
 .line[data-speaker="1"] .speaker-badge { @apply badge-info; }
