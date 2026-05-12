@@ -1,4 +1,4 @@
-const URL = "wss://stt-rt.soniox.com/transcribe-websocket"
+const URL = "wss://stt-rt.jp.soniox.com/transcribe-websocket"
 
 export type Lang = "en" | "zh" | "vi" | "ja" | "th"
 
@@ -110,9 +110,9 @@ export function startSession(apiKey: string, langA: Lang, langB: Lang, handlers:
     },
     stop() {
       if (open) {
-        try { ws.send("") } catch {}
+        try { ws.send("") } catch { }
       }
-      try { ws.close() } catch {}
+      try { ws.close() } catch { }
     },
   }
 }
