@@ -4,7 +4,7 @@ Realtime ZH ↔ EN interpreter using Soniox real-time translation with speaker d
 
 ## Stack
 
-Vite + vanilla TypeScript frontend. No backend — the Soniox key is inlined into the bundle (`VITE_SONIOX_API_KEY`) and the app is gated by Caddy basicauth. Mic audio is captured via Web Audio API + AudioWorklet (16 kHz s16le PCM) and streamed over a single WebSocket to Soniox; tokens come back tagged with language + speaker and are routed into a split-screen layout (top = zh, bottom = en).
+Vite + vanilla TypeScript frontend. No backend — the Soniox key is inlined into the bundle (`VITE_SONIOX_API_KEY`) and the app is gated by Caddy basicauth. Mic audio is captured via Web Audio API + AudioWorklet (16 kHz s16le PCM), pinned to the device's built-in microphone (so Bluetooth output stays in high-quality A2DP), and streamed over a single WebSocket to Soniox; tokens come back tagged with language + speaker and are routed into a split-screen layout (top = zh, bottom = en).
 
 ## Dev
 
