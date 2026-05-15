@@ -1,14 +1,15 @@
 import type { Lang } from "./soniox"
 
-const URL = "https://tts-rt.jp.soniox.com/tts"
+const ENDPOINT = "https://tts-rt.jp.soniox.com/tts"
 const MODEL = "tts-rt-v1"
 const VOICE = "Adrian"
 const COOLDOWN_MS = 300
+const SPEED = 1.5
 
-type PanState = {
-  node: StereoPannerNode
-  nextStart: number
-  active: Set<AudioBufferSourceNode>
+type Chan = {
+  pan: StereoPannerNode
+  queue: HTMLAudioElement[]
+  current: HTMLAudioElement | null
 }
 
 export type Tts = {
@@ -21,7 +22,7 @@ export type Tts = {
 export function startTts(apiKey: string, langA: Lang, langB: Lang): Tts {
   let ctx: AudioContext | null = null
   let abort: AbortController | null = null
-  const pans = new Map<number, PanState>()
+  const chans = new Map<number, Chan>()
   let cooldownUntil = 0
 
   const panOf = (lang: Lang) => (lang === langA ? -1 : 1)
@@ -32,16 +33,35 @@ export function startTts(apiKey: string, langA: Lang, langB: Lang): Tts {
     return ctx
   }
 
-  const panFor = (pan: number): PanState => {
-    let ps = pans.get(pan)
-    if (ps) return ps
+  const chanFor = (pan: number): Chan => {
+    let ch = chans.get(pan)
+    if (ch) return ch
     const c = ensureCtx()
     const node = c.createStereoPanner()
     node.pan.value = pan
     node.connect(c.destination)
-    ps = { node, nextStart: 0, active: new Set() }
-    pans.set(pan, ps)
-    return ps
+    ch = { pan: node, queue: [], current: null }
+    chans.set(pan, ch)
+    return ch
+  }
+
+  const playNext = (ch: Chan) => {
+    const el = ch.queue.shift() ?? null
+    ch.current = el
+    if (!el) {
+      cooldownUntil = Date.now() + COOLDOWN_MS
+      return
+    }
+    void el.play().catch(() => { })
+  }
+
+  const enqueue = (ch: Chan, el: HTMLAudioElement) => {
+    el.onended = () => {
+      URL.revokeObjectURL(el.src)
+      playNext(ch)
+    }
+    ch.queue.push(el)
+    if (!ch.current) playNext(ch)
   }
 
   const fetchAndPlay = async (text: string, lang: Lang) => {
@@ -51,7 +71,7 @@ export function startTts(apiKey: string, langA: Lang, langB: Lang): Tts {
 
     let res: Response
     try {
-      res = await fetch(URL, {
+      res = await fetch(ENDPOINT, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
@@ -75,33 +95,21 @@ export function startTts(apiKey: string, langA: Lang, langB: Lang): Tts {
       console.error(`tts http ${res.status}: ${body}`)
       return
     }
-    let bytes: ArrayBuffer
+    let blob: Blob
     try {
-      bytes = await res.arrayBuffer()
+      blob = await res.blob()
     } catch (e) {
       if ((e as Error).name !== "AbortError") console.error("tts read error", e)
       return
     }
-    let buf: AudioBuffer
-    try {
-      buf = await c.decodeAudioData(bytes)
-    } catch (e) {
-      console.error("tts decode error", e)
-      return
-    }
 
-    const ps = panFor(panOf(lang))
-    const src = c.createBufferSource()
-    src.buffer = buf
-    src.connect(ps.node)
-    const startAt = Math.max(ps.nextStart, c.currentTime)
-    src.start(startAt)
-    ps.nextStart = startAt + buf.duration
-    ps.active.add(src)
-    src.onended = () => {
-      ps.active.delete(src)
-      cooldownUntil = Date.now() + COOLDOWN_MS
-    }
+    const el = new Audio(URL.createObjectURL(blob))
+    el.playbackRate = SPEED
+    el.preservesPitch = true
+
+    const ch = chanFor(panOf(lang))
+    c.createMediaElementSource(el).connect(ch.pan)
+    enqueue(ch, el)
   }
 
   const speak = (text: string, lang: Lang) => {
@@ -111,17 +119,22 @@ export function startTts(apiKey: string, langA: Lang, langB: Lang): Tts {
 
   const isSpeaking = () => {
     if (Date.now() < cooldownUntil) return true
-    for (const ps of pans.values()) if (ps.active.size > 0) return true
+    for (const ch of chans.values()) if (ch.current) return true
     return false
   }
 
   const stop = () => {
     if (abort) { abort.abort(); abort = null }
-    for (const ps of pans.values()) {
-      for (const src of ps.active) { try { src.stop() } catch { } }
-      ps.active.clear()
+    for (const ch of chans.values()) {
+      for (const el of [ch.current, ...ch.queue]) {
+        if (!el) continue
+        el.pause()
+        URL.revokeObjectURL(el.src)
+      }
+      ch.queue.length = 0
+      ch.current = null
     }
-    pans.clear()
+    chans.clear()
     if (ctx) {
       ctx.close().catch(() => { })
       ctx = null
