@@ -131,8 +131,9 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
     }
     sock.onmessage = onMessage
     sock.onclose = () => {
+      if (ws !== sock) return
       if (keepalive != null) { clearInterval(keepalive); keepalive = null }
-      if (ws === sock) ws = null
+      ws = null
       active = null
       carry = null
     }
