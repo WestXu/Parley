@@ -1,7 +1,8 @@
 import { startMic, type Mic } from "./audio"
 import { startSession, LANGS, type Session, type Lang } from "./soniox"
 import { makeBoard, type Board } from "./render"
-import { isSpeaking } from "./tts"
+import { startTts, type Tts } from "./tts"
+import { makeOutput } from "./output"
 
 const apiKey = import.meta.env.VITE_SONIOX_API_KEY as string | undefined
 const KEY_A = "translate.langA"
@@ -16,6 +17,7 @@ const $ = <T extends HTMLElement>(sel: string) => {
 const startBtn = $<HTMLButtonElement>("#start")
 const swapBtn = $<HTMLButtonElement>("#swap")
 const rotateBtn = $<HTMLButtonElement>("#rotate")
+const epBtn = $<HTMLButtonElement>("#ep")
 const statusEl = $<HTMLSpanElement>("#status")
 const dotEl = $<HTMLSpanElement>("#status-dot")
 const langASel = $<HTMLSelectElement>("#lang-a")
@@ -62,7 +64,16 @@ swapLangsBtn.addEventListener("click", () => {
   langASel.dispatchEvent(new Event("change"))
 })
 
-let active: { mic: Mic; session: Session; board: Board; langA: Lang; langB: Lang } | null = null
+const output = makeOutput()
+const renderEp = (on: boolean) => {
+  epBtn.classList.toggle("btn-ghost", !on)
+  epBtn.classList.toggle("btn-primary", on)
+}
+renderEp(output.isHeadphones())
+output.onChange(renderEp)
+epBtn.addEventListener("click", () => output.toggle())
+
+let active: { mic: Mic; session: Session; board: Board; tts: Tts; langA: Lang; langB: Lang } | null = null
 let board: Board | null = null
 let wakeLock: WakeLockSentinel | null = null
 
@@ -87,6 +98,7 @@ const stop = () => {
   if (!active) return
   active.session.stop()
   active.mic.stop()
+  active.tts.stop()
   releaseWakeLock()
   active = null
   setRunning(false)
@@ -112,13 +124,16 @@ const start = async () => {
   board?.destroy()
   aEl.replaceChildren()
   bEl.replaceChildren()
-  const fresh = makeBoard(aEl, langA, bEl, langB)
+  const tts = startTts(apiKey, langA, langB)
+  const fresh = makeBoard(aEl, langA, bEl, langB, tts, output)
   board = fresh
 
   let mic: Mic
   try {
     let session: Session | null = null
-    mic = await startMic((pcm) => { if (!isSpeaking()) session?.send(pcm) })
+    mic = await startMic((pcm) => {
+      if (output.isHeadphones() || !tts.isSpeaking()) session?.send(pcm)
+    })
     session = startSession(apiKey, langA, langB, {
       onTokens: fresh.apply,
       onStatus: setStatus,
@@ -129,7 +144,7 @@ const start = async () => {
         stop()
       },
     })
-    active = { mic, session, board: fresh, langA, langB }
+    active = { mic, session, board: fresh, tts, langA, langB }
     setRunning(true)
     acquireWakeLock()
   } catch (e) {

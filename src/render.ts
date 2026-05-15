@@ -1,5 +1,6 @@
 import type { Lang, Token } from "./soniox"
-import { speak } from "./tts"
+import type { Tts } from "./tts"
+import type { Output } from "./output"
 
 export type Board = { apply: (tokens: Token[]) => void; destroy: () => void }
 
@@ -22,6 +23,8 @@ export function makeBoard(
   langA: Lang,
   bEl: HTMLElement,
   langB: Lang,
+  tts: Tts,
+  output: Output,
 ): Board {
   aEl.lang = langA
   bEl.lang = langB
@@ -163,7 +166,7 @@ export function makeBoard(
     }
     e.stopPropagation()
     if (span.classList.contains("selected")) {
-      speak(span.textContent ?? "", paneOf(sideOfSpan(span)).lang)
+      tts.speakOnce(span.textContent ?? "", paneOf(sideOfSpan(span)).lang)
     } else {
       select(span)
     }
@@ -201,6 +204,9 @@ export function makeBoard(
       return
     }
     if (head.chunk_id == null) return
+    if (head.status === "translation" && output.isHeadphones()) {
+      tts.feed(run.map((t) => t.text).join(""), head.language)
+    }
     addToChunk(side, head.speaker, head.chunk_id, run)
   }
 
