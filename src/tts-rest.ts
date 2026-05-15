@@ -1,15 +1,15 @@
 import type { Lang } from "./soniox"
-import { makeStretcher } from "./tts-stretch"
 import { voiceFor } from "./tts-voices"
 
 const ENDPOINT = "https://tts-rt.jp.soniox.com/tts"
 const MODEL = "tts-rt-v1"
 const COOLDOWN_MS = 300
+const SPEED = 1.5
 
 type Chan = {
   pan: StereoPannerNode
-  queue: AudioBuffer[]
-  current: AudioBufferSourceNode | null
+  queue: HTMLAudioElement[]
+  current: HTMLAudioElement | null
 }
 
 export type RestTts = {
@@ -18,7 +18,7 @@ export type RestTts = {
   stop: () => void
 }
 
-export function startRestTts(apiKey: string, langA: Lang, getCtx: () => AudioContext, speed: number): RestTts {
+export function startRestTts(apiKey: string, langA: Lang, getCtx: () => AudioContext): RestTts {
   let abort: AbortController | null = null
   const chans = new Map<number, Chan>()
   let cooldownUntil = 0
@@ -38,22 +38,21 @@ export function startRestTts(apiKey: string, langA: Lang, getCtx: () => AudioCon
   }
 
   const playNext = (ch: Chan) => {
-    const buf = ch.queue.shift() ?? null
-    if (!buf) {
-      ch.current = null
+    const el = ch.queue.shift() ?? null
+    ch.current = el
+    if (!el) {
       cooldownUntil = Date.now() + COOLDOWN_MS
       return
     }
-    const src = getCtx().createBufferSource()
-    src.buffer = buf
-    src.connect(ch.pan)
-    src.onended = () => { playNext(ch) }
-    ch.current = src
-    src.start()
+    void el.play().catch(() => { })
   }
 
-  const enqueue = (ch: Chan, buf: AudioBuffer) => {
-    ch.queue.push(buf)
+  const enqueue = (ch: Chan, el: HTMLAudioElement) => {
+    el.onended = () => {
+      URL.revokeObjectURL(el.src)
+      playNext(ch)
+    }
+    ch.queue.push(el)
     if (!ch.current) playNext(ch)
   }
 
@@ -88,33 +87,21 @@ export function startRestTts(apiKey: string, langA: Lang, getCtx: () => AudioCon
       console.error(`tts http ${res.status}: ${body}`)
       return
     }
-    let arr: ArrayBuffer
+    let blob: Blob
     try {
-      arr = await res.arrayBuffer()
+      blob = await res.blob()
     } catch (e) {
       if ((e as Error).name !== "AbortError") console.error("tts read error", e)
       return
     }
 
-    let decoded: AudioBuffer
-    try {
-      decoded = await c.decodeAudioData(arr)
-    } catch (e) {
-      console.error("tts decode error", e)
-      return
-    }
-    if (signal.aborted) return
+    const el = new Audio(URL.createObjectURL(blob))
+    el.playbackRate = SPEED
+    el.preservesPitch = true
 
-    const stretcher = makeStretcher(speed, c.sampleRate)
-    const head = stretcher.push(decoded.getChannelData(0))
-    const tail = stretcher.flush()
-    if (!head.length && !tail.length) return
-
-    const buf = c.createBuffer(1, head.length + tail.length, c.sampleRate)
-    const channel = buf.getChannelData(0)
-    channel.set(head)
-    channel.set(tail, head.length)
-    enqueue(chanFor(panOf(lang)), buf)
+    const ch = chanFor(panOf(lang))
+    c.createMediaElementSource(el).connect(ch.pan)
+    enqueue(ch, el)
   }
 
   const isSpeaking = () => {
@@ -126,9 +113,10 @@ export function startRestTts(apiKey: string, langA: Lang, getCtx: () => AudioCon
   const stop = () => {
     if (abort) { abort.abort(); abort = null }
     for (const ch of chans.values()) {
-      if (ch.current) {
-        ch.current.onended = null
-        try { ch.current.stop() } catch { }
+      for (const el of [ch.current, ...ch.queue]) {
+        if (!el) continue
+        el.pause()
+        URL.revokeObjectURL(el.src)
       }
       ch.queue.length = 0
       ch.current = null

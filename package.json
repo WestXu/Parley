@@ -18,7 +18,5 @@
   "peerDependencies": {
     "typescript": "^5"
   },
-  "dependencies": {
-    "soundtouchjs": "^0.3.0"
-  }
+  "dependencies": {}
 }

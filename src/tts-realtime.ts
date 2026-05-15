@@ -1,5 +1,4 @@
 import type { Lang } from "./soniox"
-import { makeStretcher, type Stretcher } from "./tts-stretch"
 import { voiceFor } from "./tts-voices"
 
 const ENDPOINT = "wss://tts-rt.jp.soniox.com/tts-websocket"
@@ -15,7 +14,7 @@ export type RealtimeTts = {
   stop: () => void
 }
 
-type Stream = { id: string; lang: Lang; speaker: number; carry: Uint8Array | null; stretch: Stretcher }
+type Stream = { id: string; lang: Lang; speaker: number; carry: Uint8Array | null }
 
 type ServerMsg = {
   stream_id?: string
@@ -26,7 +25,7 @@ type ServerMsg = {
   error_message?: string
 }
 
-export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => AudioContext, speed: number): RealtimeTts {
+export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => AudioContext): RealtimeTts {
   const streams = new Map<string, Stream>()
   const sources = new Set<AudioBufferSourceNode>()
   const pans = new Map<number, StereoPannerNode>()
@@ -70,7 +69,9 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
     return f32
   }
 
-  const scheduleSamples = (stream: Stream, f32: Float32Array) => {
+  const scheduleChunk = (stream: Stream, b64: string) => {
+    const f32 = decodePcm(stream, b64)
+    if (!f32.length) return
     const ctx = getCtx()
     const buf = ctx.createBuffer(1, f32.length, SAMPLE_RATE)
     buf.getChannelData(0).set(f32)
@@ -82,13 +83,6 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
     nextStartTime = startAt + buf.duration
     sources.add(src)
     src.onended = () => { sources.delete(src) }
-  }
-
-  const scheduleChunk = (stream: Stream, b64: string) => {
-    const f32 = decodePcm(stream, b64)
-    if (!f32.length) return
-    const out = stream.stretch.push(f32)
-    if (out.length) scheduleSamples(stream, out)
   }
 
   const send = (obj: object) => {
@@ -107,11 +101,7 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
       return
     }
     if (typeof msg.audio === "string" && msg.audio) scheduleChunk(stream, msg.audio)
-    if (msg.audio_end === true) {
-      const tail = stream.stretch.flush()
-      if (tail.length) scheduleSamples(stream, tail)
-      nextStartTime += GAP_S
-    }
+    if (msg.audio_end === true) nextStartTime += GAP_S
     if (msg.terminated === true) {
       streams.delete(stream.id)
       if (current === stream) current = null
@@ -147,7 +137,7 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
   }
 
   const openStream = (lang: Lang, speaker: number): Stream => {
-    const stream: Stream = { id: `s${++seq}`, lang, speaker, carry: null, stretch: makeStretcher(speed, SAMPLE_RATE) }
+    const stream: Stream = { id: `s${++seq}`, lang, speaker, carry: null }
     streams.set(stream.id, stream)
     send({
       api_key: apiKey,

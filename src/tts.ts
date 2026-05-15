@@ -2,8 +2,6 @@ import type { Lang } from "./soniox"
 import { startRestTts } from "./tts-rest"
 import { startRealtimeTts } from "./tts-realtime"
 
-const SPEED = 1.5
-
 export type Tts = {
   feed: (text: string, lang: Lang, speaker: number) => void
   endUtterance: () => void
@@ -20,8 +18,8 @@ export function startTts(apiKey: string, langA: Lang): Tts {
     return ctx
   }
 
-  const rest = startRestTts(apiKey, langA, getCtx, SPEED)
-  const realtime = startRealtimeTts(apiKey, langA, getCtx, SPEED)
+  const rest = startRestTts(apiKey, langA, getCtx)
+  const realtime = startRealtimeTts(apiKey, langA, getCtx)
 
   return {
     feed: realtime.feed,
