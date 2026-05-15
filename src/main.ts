@@ -124,7 +124,7 @@ const start = async () => {
   board?.destroy()
   aEl.replaceChildren()
   bEl.replaceChildren()
-  const tts = startTts(apiKey, langA, langB)
+  const tts = startTts(apiKey, langA)
   const fresh = makeBoard(aEl, langA, bEl, langB, tts, output)
   board = fresh
 

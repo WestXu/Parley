@@ -129,6 +129,7 @@ export function makeBoard(
     span.className = "sentence"
     span.dataset.key = key
     span.dataset.side = side
+    span.dataset.speaker = String(speaker)
     for (const t of tokens) span.appendChild(makeTok(t))
 
     const del = document.createElement("button")
@@ -166,7 +167,7 @@ export function makeBoard(
     }
     e.stopPropagation()
     if (span.classList.contains("selected")) {
-      tts.speakOnce(span.textContent ?? "", paneOf(sideOfSpan(span)).lang)
+      tts.speakOnce(span.textContent ?? "", paneOf(sideOfSpan(span)).lang, Number(span.dataset.speaker))
     } else {
       select(span)
     }
@@ -205,7 +206,7 @@ export function makeBoard(
     }
     if (head.chunk_id == null) return
     if (head.status === "translation" && output.isHeadphones()) {
-      tts.feed(run.map((t) => t.text).join(""), head.language)
+      tts.feed(run.map((t) => t.text).join(""), head.language, head.speaker)
     }
     addToChunk(side, head.speaker, head.chunk_id, run)
   }
