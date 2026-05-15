@@ -4,6 +4,7 @@ import { startRealtimeTts } from "./tts-realtime"
 
 export type Tts = {
   feed: (text: string, lang: Lang, speaker: number) => void
+  endUtterance: () => void
   speakOnce: (text: string, lang: Lang, speaker: number) => void
   isSpeaking: () => boolean
   stop: () => void
@@ -22,6 +23,7 @@ export function startTts(apiKey: string, langA: Lang): Tts {
 
   return {
     feed: realtime.feed,
+    endUtterance: realtime.endUtterance,
     speakOnce: rest.speakOnce,
     isSpeaking: rest.isSpeaking,
     stop: () => {

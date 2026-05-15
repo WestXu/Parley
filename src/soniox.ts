@@ -14,6 +14,8 @@ export type Token = {
   confidence: number
 }
 
+export type Item = Token | { end: true }
+
 type RawToken = {
   text?: string
   language?: string
@@ -24,7 +26,7 @@ type RawToken = {
 }
 
 type Handlers = {
-  onTokens: (tokens: Token[]) => void
+  onTokens: (items: Item[]) => void
   onStatus: (s: string) => void
   onError: (e: Error) => void
 }
@@ -72,9 +74,10 @@ export function startSession(apiKey: string, langA: Lang, langB: Lang, handlers:
     }
     const raw = msg.tokens ?? []
     const chunk_id = typeof msg.final_audio_proc_ms === "number" ? msg.final_audio_proc_ms : null
-    const out: Token[] = []
+    const out: Item[] = []
     for (const t of raw) {
       if (!t.text) continue
+      if (t.text === "<end>") { out.push({ end: true }); continue }
       const status = t.translation_status
       if (status !== "original" && status !== "translation") continue
       const lang = t.language === langA || t.language === langB ? t.language : null

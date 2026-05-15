@@ -10,10 +10,12 @@ const GAP_S = 0.15
 
 export type RealtimeTts = {
   feed: (text: string, lang: Lang, speaker: number) => void
+  endUtterance: () => void
   stop: () => void
 }
 
-type Pending = { text: string; lang: Lang; speaker: number }
+type Stream = { id: string; lang: Lang; speaker: number; carry: Uint8Array | null }
+
 type ServerMsg = {
   stream_id?: string
   audio?: string
@@ -24,13 +26,13 @@ type ServerMsg = {
 }
 
 export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => AudioContext): RealtimeTts {
-  const pending: Pending[] = []
+  const streams = new Map<string, Stream>()
   const sources = new Set<AudioBufferSourceNode>()
   const pans = new Map<number, StereoPannerNode>()
+  const outbox: object[] = []
   let ws: WebSocket | null = null
   let keepalive: number | null = null
-  let active: { streamId: string; lang: Lang } | null = null
-  let carry: Uint8Array | null = null
+  let current: Stream | null = null
   let nextStartTime = 0
   let seq = 0
 
@@ -46,19 +48,19 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
     return node
   }
 
-  const decodePcm = (b64: string): Float32Array => {
+  const decodePcm = (stream: Stream, b64: string): Float32Array => {
     const bin = atob(b64)
     let bytes = new Uint8Array(bin.length)
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
-    if (carry) {
-      const merged = new Uint8Array(carry.length + bytes.length)
-      merged.set(carry)
-      merged.set(bytes, carry.length)
+    if (stream.carry) {
+      const merged = new Uint8Array(stream.carry.length + bytes.length)
+      merged.set(stream.carry)
+      merged.set(bytes, stream.carry.length)
       bytes = merged
-      carry = null
+      stream.carry = null
     }
     if (bytes.length % 2 === 1) {
-      carry = bytes.slice(bytes.length - 1)
+      stream.carry = bytes.slice(bytes.length - 1)
       bytes = bytes.slice(0, bytes.length - 1)
     }
     const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.length)
@@ -67,15 +69,15 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
     return f32
   }
 
-  const scheduleChunk = (b64: string, lang: Lang) => {
-    const f32 = decodePcm(b64)
+  const scheduleChunk = (stream: Stream, b64: string) => {
+    const f32 = decodePcm(stream, b64)
     if (!f32.length) return
     const ctx = getCtx()
     const buf = ctx.createBuffer(1, f32.length, SAMPLE_RATE)
     buf.getChannelData(0).set(f32)
     const src = ctx.createBufferSource()
     src.buffer = buf
-    src.connect(panFor(lang))
+    src.connect(panFor(stream.lang))
     const startAt = Math.max(ctx.currentTime + LEAD_S, nextStartTime)
     src.start(startAt)
     nextStartTime = startAt + buf.duration
@@ -83,40 +85,26 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
     src.onended = () => { sources.delete(src) }
   }
 
-  const processNext = () => {
-    if (active) return
-    if (!ws || ws.readyState !== WebSocket.OPEN) return
-    const item = pending.shift()
-    if (!item) return
-    const streamId = `s${++seq}`
-    active = { streamId, lang: item.lang }
-    carry = null
-    ws.send(JSON.stringify({
-      api_key: apiKey,
-      model: MODEL,
-      language: item.lang,
-      voice: voiceFor(item.speaker),
-      audio_format: "pcm_s16le",
-      sample_rate: SAMPLE_RATE,
-      stream_id: streamId,
-    }))
-    ws.send(JSON.stringify({ text: item.text, text_end: true, stream_id: streamId }))
+  const send = (obj: object) => {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj))
+    else outbox.push(obj)
   }
 
   const onMessage = (e: MessageEvent) => {
     let msg: ServerMsg
     try { msg = JSON.parse(e.data) } catch { return }
-    if (!active || msg.stream_id !== active.streamId) return
+    if (!msg.stream_id) return
+    const stream = streams.get(msg.stream_id)
+    if (!stream) return
     if (msg.error_code) {
       console.error(`tts-rt ${msg.error_code}: ${msg.error_message ?? ""}`)
       return
     }
-    if (typeof msg.audio === "string" && msg.audio) scheduleChunk(msg.audio, active.lang)
+    if (typeof msg.audio === "string" && msg.audio) scheduleChunk(stream, msg.audio)
     if (msg.audio_end === true) nextStartTime += GAP_S
     if (msg.terminated === true) {
-      active = null
-      carry = null
-      processNext()
+      streams.delete(stream.id)
+      if (current === stream) current = null
     }
   }
 
@@ -127,15 +115,19 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
       keepalive = window.setInterval(() => {
         try { sock.send(JSON.stringify({ keep_alive: true })) } catch { }
       }, KEEPALIVE_MS)
-      processNext()
+      for (const obj of outbox) {
+        try { sock.send(JSON.stringify(obj)) } catch { }
+      }
+      outbox.length = 0
     }
     sock.onmessage = onMessage
     sock.onclose = () => {
       if (ws !== sock) return
       if (keepalive != null) { clearInterval(keepalive); keepalive = null }
       ws = null
-      active = null
-      carry = null
+      current = null
+      streams.clear()
+      outbox.length = 0
     }
   }
 
@@ -144,20 +136,47 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
     connect()
   }
 
+  const openStream = (lang: Lang, speaker: number): Stream => {
+    const stream: Stream = { id: `s${++seq}`, lang, speaker, carry: null }
+    streams.set(stream.id, stream)
+    send({
+      api_key: apiKey,
+      model: MODEL,
+      language: lang,
+      voice: voiceFor(speaker),
+      audio_format: "pcm_s16le",
+      sample_rate: SAMPLE_RATE,
+      stream_id: stream.id,
+    })
+    return stream
+  }
+
   const feed = (text: string, lang: Lang, speaker: number) => {
     if (!text) return
-    pending.push({ text, lang, speaker })
     ensureWs()
-    processNext()
+    if (current && (current.lang !== lang || current.speaker !== speaker)) {
+      send({ stream_id: current.id, text_end: true })
+      current = null
+    }
+    if (!current) current = openStream(lang, speaker)
+    send({ text, text_end: false, stream_id: current.id })
+  }
+
+  const endUtterance = () => {
+    if (!current) return
+    send({ stream_id: current.id, text_end: true })
+    current = null
   }
 
   const stop = () => {
-    pending.length = 0
-    if (ws && ws.readyState === WebSocket.OPEN && active) {
-      try { ws.send(JSON.stringify({ stream_id: active.streamId, cancel: true })) } catch { }
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      for (const stream of streams.values()) {
+        try { ws.send(JSON.stringify({ stream_id: stream.id, cancel: true })) } catch { }
+      }
     }
-    active = null
-    carry = null
+    streams.clear()
+    current = null
+    outbox.length = 0
     if (keepalive != null) { clearInterval(keepalive); keepalive = null }
     if (ws) { try { ws.close() } catch { } ws = null }
     for (const src of sources) { try { src.stop() } catch { } }
@@ -165,5 +184,5 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
     nextStartTime = 0
   }
 
-  return { feed, stop }
+  return { feed, endUtterance, stop }
 }

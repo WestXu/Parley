@@ -1,8 +1,8 @@
-import type { Lang, Token } from "./soniox"
+import type { Item, Lang, Token } from "./soniox"
 import type { Tts } from "./tts"
 import type { Output } from "./output"
 
-export type Board = { apply: (tokens: Token[]) => void; destroy: () => void }
+export type Board = { apply: (items: Item[]) => void; destroy: () => void }
 
 type Side = "a" | "b"
 
@@ -211,19 +211,25 @@ export function makeBoard(
     addToChunk(side, head.speaker, head.chunk_id, run)
   }
 
-  const apply = (tokens: Token[]) => {
-    if (!tokens.length) return
+  const apply = (items: Item[]) => {
+    if (!items.length) return
 
     if (a.line) a.line.liveEl.textContent = ""
     if (b.line) b.line.liveEl.textContent = ""
 
     let run: Token[] = []
-    for (const t of tokens) {
-      if (run.length && !sameRun(run[0]!, t)) {
+    for (const it of items) {
+      if ("end" in it) {
+        flushRun(run)
+        run = []
+        tts.endUtterance()
+        continue
+      }
+      if (run.length && !sameRun(run[0]!, it)) {
         flushRun(run)
         run = []
       }
-      run.push(t)
+      run.push(it)
     }
     flushRun(run)
 
