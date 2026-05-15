@@ -3,6 +3,7 @@ import { startSession, LANGS, type Session, type Lang } from "./soniox"
 import { makeBoard, type Board } from "./render"
 import { startTts, type Tts } from "./tts"
 import { makeOutput } from "./output"
+import { notify } from "./notify"
 
 const apiKey = import.meta.env.VITE_SONIOX_API_KEY as string | undefined
 const KEY_A = "translate.langA"
@@ -18,18 +19,11 @@ const startBtn = $<HTMLButtonElement>("#start")
 const swapBtn = $<HTMLButtonElement>("#swap")
 const rotateBtn = $<HTMLButtonElement>("#rotate")
 const epBtn = $<HTMLButtonElement>("#ep")
-const statusEl = $<HTMLSpanElement>("#status")
-const dotEl = $<HTMLSpanElement>("#status-dot")
 const langASel = $<HTMLSelectElement>("#lang-a")
 const langBSel = $<HTMLSelectElement>("#lang-b")
 const aEl = $<HTMLElement>("#pane-a")
 const bEl = $<HTMLElement>("#pane-b")
 const swapLangsBtn = $<HTMLButtonElement>("#swap-langs")
-
-const setStatus = (s: string) => { statusEl.textContent = s }
-const setDot = (kind: "neutral" | "success" | "error") => {
-  dotEl.className = `status status-sm status-${kind}`
-}
 
 const isLang = (s: string): s is Lang => (LANGS as string[]).includes(s)
 
@@ -81,7 +75,6 @@ const setRunning = (running: boolean) => {
   document.body.classList.toggle("running", running)
   startBtn.textContent = running ? "Stop" : "Start"
   for (const el of [langASel, langBSel, swapLangsBtn, epBtn]) el.disabled = running
-  setDot(running ? "success" : "neutral")
 }
 
 const acquireWakeLock = async () => {
@@ -106,20 +99,18 @@ const stop = () => {
 
 const start = async () => {
   if (!apiKey) {
-    setStatus("missing VITE_SONIOX_API_KEY")
-    setDot("error")
+    notify("missing VITE_SONIOX_API_KEY", "error")
     return
   }
   const langA = langASel.value
   const langB = langBSel.value
   if (!isLang(langA) || !isLang(langB)) {
-    setStatus(`bad lang: ${langA}/${langB}`)
-    setDot("error")
+    notify(`bad lang: ${langA}/${langB}`, "error")
     return
   }
 
   startBtn.disabled = true
-  setStatus("requesting mic")
+  notify("requesting mic", "info")
 
   board?.destroy()
   aEl.replaceChildren()
@@ -136,11 +127,10 @@ const start = async () => {
     })
     session = startSession(apiKey, langA, langB, {
       onTokens: fresh.apply,
-      onStatus: setStatus,
+      onStatus: (s) => notify(s, s === "listening" ? "success" : "info"),
       onError: (e) => {
         console.error(e)
-        setStatus(e.message)
-        setDot("error")
+        notify(e.message, "error")
         stop()
       },
     })
@@ -149,8 +139,7 @@ const start = async () => {
     acquireWakeLock()
   } catch (e) {
     console.error(e)
-    setStatus((e as Error).message)
-    setDot("error")
+    notify((e as Error).message, "error")
   } finally {
     startBtn.disabled = false
   }
