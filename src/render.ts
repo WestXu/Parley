@@ -1,7 +1,7 @@
 import type { Lang, Token } from "./soniox"
 import { speak } from "./tts"
 
-export type Board = { apply: (tokens: Token[]) => void }
+export type Board = { apply: (tokens: Token[]) => void; destroy: () => void }
 
 type Side = "a" | "b"
 
@@ -63,9 +63,12 @@ export function makeBoard(
   }
 
   const ensureLine = (pane: PaneState, speaker: number): Line => {
-    if (!pane.line || pane.line.speaker !== speaker) {
-      pane.line = openLine(pane, speaker)
+    if (pane.line?.speaker === speaker) return pane.line
+    if (pane.line) {
+      pane.line.liveEl.textContent = ""
+      if (!pane.line.el.querySelector(".sentence")) pane.line.el.remove()
     }
+    pane.line = openLine(pane, speaker)
     return pane.line
   }
 
@@ -166,12 +169,19 @@ export function makeBoard(
     }
   }
 
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") clearSelection()
+  }
+
   aEl.addEventListener("click", onPaneClick)
   bEl.addEventListener("click", onPaneClick)
+  document.addEventListener("keydown", onKeyDown)
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") clearSelection()
-  })
+  const destroy = () => {
+    aEl.removeEventListener("click", onPaneClick)
+    bEl.removeEventListener("click", onPaneClick)
+    document.removeEventListener("keydown", onKeyDown)
+  }
 
   const sameRun = (x: Token, y: Token) =>
     x.is_final === y.is_final &&
@@ -214,5 +224,5 @@ export function makeBoard(
     bEl.scrollTop = bEl.scrollHeight
   }
 
-  return { apply }
+  return { apply, destroy }
 }

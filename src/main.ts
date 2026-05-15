@@ -63,6 +63,7 @@ swapLangsBtn.addEventListener("click", () => {
 })
 
 let active: { mic: Mic; session: Session; board: Board; langA: Lang; langB: Lang } | null = null
+let board: Board | null = null
 let wakeLock: WakeLockSentinel | null = null
 
 const setRunning = (running: boolean) => {
@@ -108,16 +109,18 @@ const start = async () => {
   startBtn.disabled = true
   setStatus("requesting mic")
 
+  board?.destroy()
   aEl.replaceChildren()
   bEl.replaceChildren()
-  const board = makeBoard(aEl, langA, bEl, langB)
+  const fresh = makeBoard(aEl, langA, bEl, langB)
+  board = fresh
 
   let mic: Mic
   try {
     let session: Session | null = null
     mic = await startMic((pcm) => { if (!isSpeaking()) session?.send(pcm) })
     session = startSession(apiKey, langA, langB, {
-      onTokens: board.apply,
+      onTokens: fresh.apply,
       onStatus: setStatus,
       onError: (e) => {
         console.error(e)
@@ -126,7 +129,7 @@ const start = async () => {
         stop()
       },
     })
-    active = { mic, session, board, langA, langB }
+    active = { mic, session, board: fresh, langA, langB }
     setRunning(true)
     acquireWakeLock()
   } catch (e) {
