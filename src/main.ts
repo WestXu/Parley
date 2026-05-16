@@ -74,7 +74,7 @@ let wakeLock: WakeLockSentinel | null = null
 
 const setRunning = (running: boolean) => {
   document.body.classList.toggle("running", running)
-  startBtn.textContent = running ? "Stop" : "Start"
+  startBtn.setAttribute("aria-label", running ? "stop translation" : "start translation")
   for (const el of [langASel, langBSel, swapLangsBtn, epBtn]) el.disabled = running
 }
 

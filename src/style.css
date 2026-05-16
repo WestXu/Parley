@@ -20,15 +20,18 @@ main.top-rotated .is-top {
 body.running #start { @apply btn-error; }
 body:not(.running) #start { @apply btn-primary; }
 
+body.running #start .i-play,
+body:not(.running) #start .i-stop { display: none; }
+
 @media (orientation: portrait) {
   .is-top { padding-top: max(0.75rem, env(safe-area-inset-top)); }
-  .is-bottom { padding-bottom: calc(3.5rem + env(safe-area-inset-bottom)); }
+  .is-bottom { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
 }
 
 @media (orientation: landscape) {
   .pane {
     padding-top: max(0.75rem, env(safe-area-inset-top));
-    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
   }
 }
 
