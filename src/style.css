@@ -26,6 +26,11 @@ body:not(.running) #start .i-stop { display: none; }
 @media (orientation: portrait) {
   .is-top { padding-top: max(0.75rem, env(safe-area-inset-top)); }
   .is-bottom { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+
+  main.top-rotated .is-top {
+    padding-top: 0.75rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-top));
+  }
 }
 
 @media (orientation: landscape) {
