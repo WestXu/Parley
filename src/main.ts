@@ -1,4 +1,5 @@
 import { startMic, type Mic } from "./audio"
+import { pickInput } from "./pick-device"
 import { startSession, LANGS, type Session, type Lang } from "./soniox"
 import { makeBoard, type Board } from "./render"
 import { startTts, type Tts } from "./tts"
@@ -110,6 +111,20 @@ const start = async () => {
   }
 
   startBtn.disabled = true
+
+  let deviceId: string | undefined
+  if (output.isHeadphones()) {
+    try {
+      const picked = await pickInput()
+      if (!picked) { startBtn.disabled = false; return }
+      deviceId = picked.deviceId
+    } catch (e) {
+      notify((e as Error).message, "error")
+      startBtn.disabled = false
+      return
+    }
+  }
+
   notify("requesting mic", "info")
 
   board?.destroy()
@@ -124,7 +139,7 @@ const start = async () => {
     let session: Session | null = null
     mic = await startMic((pcm) => {
       if (output.isHeadphones() || !tts.isSpeaking()) session?.send(pcm)
-    })
+    }, deviceId)
     session = startSession(apiKey, langA, langB, {
       onTokens: fresh.apply,
       onStatus: (s) => notify(s, s === "listening" ? "success" : "info"),

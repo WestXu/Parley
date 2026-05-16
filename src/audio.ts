@@ -18,10 +18,15 @@ async function builtInMicId(): Promise<string | undefined> {
   return devices.find((d) => d.kind === "audioinput" && BUILT_IN.test(d.label))?.deviceId
 }
 
-async function captureStream(): Promise<MediaStream> {
+async function captureStream(deviceId?: string): Promise<MediaStream> {
   const md = navigator.mediaDevices
   const exact = (id: string) =>
     md.getUserMedia({ audio: { ...AUDIO, deviceId: { exact: id } } })
+
+  // Headphone mode: the user explicitly picked this input, so honour it directly.
+  if (deviceId) {
+    try { return await exact(deviceId) } catch { return md.getUserMedia({ audio: AUDIO }) }
+  }
 
   // Permission granted on a prior visit: labels are already populated, so we
   // can target the built-in mic directly without ever opening the AirPods mic.
@@ -39,8 +44,11 @@ async function captureStream(): Promise<MediaStream> {
   try { return await exact(id) } catch { return md.getUserMedia({ audio: AUDIO }) }
 }
 
-export async function startMic(onFrame: (pcm: Int16Array) => void): Promise<Mic> {
-  const stream = await captureStream()
+export async function startMic(
+  onFrame: (pcm: Int16Array) => void,
+  deviceId?: string,
+): Promise<Mic> {
+  const stream = await captureStream(deviceId)
 
   const ctx = new AudioContext({ sampleRate: 16000 })
   await ctx.audioWorklet.addModule(`${import.meta.env.BASE_URL}pcm-worklet.js`)
