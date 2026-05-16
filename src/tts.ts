@@ -1,5 +1,4 @@
 import type { Lang } from "./soniox"
-import { startRestTts } from "./tts-rest"
 import { startRealtimeTts } from "./tts-realtime"
 
 export type Tts = {
@@ -10,6 +9,16 @@ export type Tts = {
   stop: () => void
 }
 
+const BCP47: Record<Lang, string> = {
+  en: "en-US",
+  zh: "zh-CN",
+  vi: "vi-VN",
+  ja: "ja-JP",
+  th: "th-TH",
+}
+const SPEED = 1.25
+const COOLDOWN_MS = 300
+
 export function startTts(apiKey: string, langA: Lang): Tts {
   let ctx: AudioContext | null = null
   const getCtx = (): AudioContext => {
@@ -18,16 +27,29 @@ export function startTts(apiKey: string, langA: Lang): Tts {
     return ctx
   }
 
-  const rest = startRestTts(apiKey, langA, getCtx)
   const realtime = startRealtimeTts(apiKey, langA, getCtx)
+
+  let cooldownUntil = 0
+
+  const speakOnce = (text: string, lang: Lang) => {
+    if (!text) return
+    const u = new SpeechSynthesisUtterance(text)
+    u.lang = BCP47[lang]
+    u.rate = SPEED
+    u.onend = u.onerror = () => { cooldownUntil = Date.now() + COOLDOWN_MS }
+    speechSynthesis.speak(u)
+  }
+
+  const isSpeaking = () =>
+    speechSynthesis.speaking || speechSynthesis.pending || Date.now() < cooldownUntil
 
   return {
     feed: realtime.feed,
     endUtterance: realtime.endUtterance,
-    speakOnce: rest.speakOnce,
-    isSpeaking: rest.isSpeaking,
+    speakOnce,
+    isSpeaking,
     stop: () => {
-      rest.stop()
+      speechSynthesis.cancel()
       realtime.stop()
       if (ctx) {
         ctx.close().catch(() => { })
