@@ -17,6 +17,14 @@ main.top-rotated .is-top {
 #rotate { transition: transform .25s; }
 #rotate.rotated { transform: rotate(180deg); }
 
+/* iOS jitters position:fixed elements while a standalone PWA viewport settles
+   after launch/rotation. Promoting the bar to its own compositor layer — the
+   well-known translateZ(0) fix — composites it as a stable texture instead. */
+#bar {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
 body.running #start { @apply btn-error; }
 body:not(.running) #start { @apply btn-primary; }
 
