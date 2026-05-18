@@ -40,3 +40,7 @@ docker run -p 4173:4173 translate
 ```
 
 App is served at `http://localhost:4173/translate/`.
+
+## License
+
+[AGPL-3.0](LICENSE)
