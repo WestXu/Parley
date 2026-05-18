@@ -3,6 +3,9 @@
   themes: light --default, dark --prefersdark;
 }
 
+:root { --vph: 100dvh; }
+html.standalone { --vph: 100vh; }
+
 .pane {
   scrollbar-width: thin;
 }
