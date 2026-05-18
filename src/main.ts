@@ -5,8 +5,10 @@ import { makeBoard, type Board } from "./render"
 import { startTts, type Tts } from "./tts"
 import { makeOutput } from "./output"
 import { notify } from "./notify"
+import { sonioxUrls } from "./region"
 
 const apiKey = import.meta.env.VITE_SONIOX_API_KEY as string | undefined
+const { stt: sttUrl, tts: ttsUrl } = sonioxUrls(import.meta.env.VITE_REGION as string | undefined)
 const KEY_A = "parley.langA"
 const KEY_B = "parley.langB"
 
@@ -130,7 +132,7 @@ const start = async () => {
   board?.destroy()
   aEl.replaceChildren()
   bEl.replaceChildren()
-  const tts = startTts(apiKey, langA)
+  const tts = startTts(apiKey, ttsUrl, langA)
   const fresh = makeBoard(aEl, langA, bEl, langB, tts, output)
   board = fresh
 
@@ -140,7 +142,7 @@ const start = async () => {
     mic = await startMic((pcm) => {
       if (output.isHeadphones() || !tts.isSpeaking()) session?.send(pcm)
     }, deviceId)
-    session = startSession(apiKey, langA, langB, {
+    session = startSession(apiKey, sttUrl, langA, langB, {
       onTokens: fresh.apply,
       onStatus: (s) => notify(s, s === "listening" ? "success" : "info"),
       onError: (e) => {

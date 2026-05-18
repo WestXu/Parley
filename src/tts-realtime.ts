@@ -1,7 +1,6 @@
 import type { Lang } from "./soniox"
 import { voiceFor } from "./tts-voices"
 
-const ENDPOINT = "wss://tts-rt.jp.soniox.com/tts-websocket"
 const MODEL = "tts-rt-v1"
 const SAMPLE_RATE = 24000
 const KEEPALIVE_MS = 20000
@@ -25,7 +24,7 @@ type ServerMsg = {
   error_message?: string
 }
 
-export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => AudioContext): RealtimeTts {
+export function startRealtimeTts(apiKey: string, ttsUrl: string, langA: Lang, getCtx: () => AudioContext): RealtimeTts {
   const streams = new Map<string, Stream>()
   const sources = new Set<AudioBufferSourceNode>()
   const pans = new Map<number, StereoPannerNode>()
@@ -109,7 +108,7 @@ export function startRealtimeTts(apiKey: string, langA: Lang, getCtx: () => Audi
   }
 
   const connect = () => {
-    const sock = new WebSocket(ENDPOINT)
+    const sock = new WebSocket(ttsUrl)
     ws = sock
     sock.onopen = () => {
       keepalive = window.setInterval(() => {

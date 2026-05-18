@@ -1,5 +1,3 @@
-const URL = "wss://stt-rt.jp.soniox.com/transcribe-websocket"
-
 export type Lang = "en" | "zh" | "vi" | "ja" | "th"
 
 export const LANGS: Lang[] = ["en", "zh", "vi", "ja", "th"]
@@ -36,9 +34,9 @@ export type Session = {
   stop: () => void
 }
 
-export function startSession(apiKey: string, langA: Lang, langB: Lang, handlers: Handlers): Session {
+export function startSession(apiKey: string, sttUrl: string, langA: Lang, langB: Lang, handlers: Handlers): Session {
   const { onTokens, onStatus, onError } = handlers
-  const ws = new WebSocket(URL)
+  const ws = new WebSocket(sttUrl)
   ws.binaryType = "arraybuffer"
 
   let open = false

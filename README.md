@@ -20,6 +20,7 @@ Tokens stream back tagged with `language`,         `speaker`,         `is_final`
 ```
 # .env
 VITE_SONIOX_API_KEY=...
+VITE_REGION=us  # us | eu | jp (default us)
 ```
 
 ```bash
@@ -38,6 +39,8 @@ The Soniox key is inlined into the bundle at build time, so it must be passed as
 docker build --build-arg VITE_SONIOX_API_KEY=... -t parley .
 docker run -p 4173:4173 parley
 ```
+
+Pass `--build-arg VITE_REGION=eu` (or `jp`) to use a non-US Soniox region.
 
 App is served at `http://localhost:4173/parley/`.
 

@@ -19,7 +19,7 @@ const BCP47: Record<Lang, string> = {
 const SPEED = 1.25
 const COOLDOWN_MS = 300
 
-export function startTts(apiKey: string, langA: Lang): Tts {
+export function startTts(apiKey: string, ttsUrl: string, langA: Lang): Tts {
   let ctx: AudioContext | null = null
   const getCtx = (): AudioContext => {
     if (!ctx) ctx = new AudioContext()
@@ -27,7 +27,7 @@ export function startTts(apiKey: string, langA: Lang): Tts {
     return ctx
   }
 
-  const realtime = startRealtimeTts(apiKey, langA, getCtx)
+  const realtime = startRealtimeTts(apiKey, ttsUrl, langA, getCtx)
 
   let cooldownUntil = 0
 
