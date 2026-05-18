@@ -1,4 +1,4 @@
-# Translate
+# Parley
 
 Realtime two-way interpreter for a device laid flat between two speakers. Pick any pair from different languages. Wraps Soniox real-time translation over WebSocket; speakers are distinguished via diarization.
 
@@ -35,11 +35,11 @@ make serve
 The Soniox key is inlined into the bundle at build time, so it must be passed as a build arg:
 
 ```bash
-docker build --build-arg VITE_SONIOX_API_KEY=... -t translate .
-docker run -p 4173:4173 translate
+docker build --build-arg VITE_SONIOX_API_KEY=... -t parley .
+docker run -p 4173:4173 parley
 ```
 
-App is served at `http://localhost:4173/translate/`.
+App is served at `http://localhost:4173/parley/`.
 
 ## License
 

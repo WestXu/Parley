@@ -7,8 +7,8 @@ import { makeOutput } from "./output"
 import { notify } from "./notify"
 
 const apiKey = import.meta.env.VITE_SONIOX_API_KEY as string | undefined
-const KEY_A = "translate.langA"
-const KEY_B = "translate.langB"
+const KEY_A = "parley.langA"
+const KEY_B = "parley.langB"
 
 const $ = <T extends HTMLElement>(sel: string) => {
   const el = document.querySelector(sel) as T | null
