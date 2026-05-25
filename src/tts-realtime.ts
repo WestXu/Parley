@@ -13,7 +13,7 @@ export type RealtimeTts = {
   stop: () => void
 }
 
-type Stream = { id: string; lang: Lang; speaker: number; carry: Uint8Array | null }
+type Stream = { id: string; lang: Lang; speaker: number; carry: Uint8Array | null; nextStartTime: number }
 
 type ServerMsg = {
   stream_id?: string
@@ -32,7 +32,6 @@ export function startRealtimeTts(apiKey: string, ttsUrl: string, langA: Lang, ge
   let ws: WebSocket | null = null
   let keepalive: number | null = null
   let current: Stream | null = null
-  let nextStartTime = 0
   let seq = 0
 
   const panFor = (lang: Lang): StereoPannerNode => {
@@ -77,9 +76,9 @@ export function startRealtimeTts(apiKey: string, ttsUrl: string, langA: Lang, ge
     const src = ctx.createBufferSource()
     src.buffer = buf
     src.connect(panFor(stream.lang))
-    const startAt = Math.max(ctx.currentTime + LEAD_S, nextStartTime)
+    const startAt = Math.max(ctx.currentTime + LEAD_S, stream.nextStartTime)
     src.start(startAt)
-    nextStartTime = startAt + buf.duration
+    stream.nextStartTime = startAt + buf.duration
     sources.add(src)
     src.onended = () => { sources.delete(src) }
   }
@@ -100,7 +99,7 @@ export function startRealtimeTts(apiKey: string, ttsUrl: string, langA: Lang, ge
       return
     }
     if (typeof msg.audio === "string" && msg.audio) scheduleChunk(stream, msg.audio)
-    if (msg.audio_end === true) nextStartTime += GAP_S
+    if (msg.audio_end === true) stream.nextStartTime += GAP_S
     if (msg.terminated === true) {
       streams.delete(stream.id)
       if (current === stream) current = null
@@ -136,7 +135,7 @@ export function startRealtimeTts(apiKey: string, ttsUrl: string, langA: Lang, ge
   }
 
   const openStream = (lang: Lang, speaker: number): Stream => {
-    const stream: Stream = { id: `s${++seq}`, lang, speaker, carry: null }
+    const stream: Stream = { id: `s${++seq}`, lang, speaker, carry: null, nextStartTime: 0 }
     streams.set(stream.id, stream)
     send({
       api_key: apiKey,
@@ -180,7 +179,6 @@ export function startRealtimeTts(apiKey: string, ttsUrl: string, langA: Lang, ge
     if (ws) { try { ws.close() } catch { } ws = null }
     for (const src of sources) { try { src.stop() } catch { } }
     sources.clear()
-    nextStartTime = 0
   }
 
   return { feed, endUtterance, stop }
