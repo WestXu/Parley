@@ -30,13 +30,18 @@ export function startTts(apiKey: string, ttsUrl: string, langA: Lang): Tts {
   const realtime = startRealtimeTts(apiKey, ttsUrl, langA, getCtx)
 
   let cooldownUntil = 0
+  const pending = new Set<string>()
 
   const speakOnce = (text: string, lang: Lang) => {
-    if (!text) return
+    if (!text || pending.has(text)) return
     const u = new SpeechSynthesisUtterance(text)
     u.lang = BCP47[lang]
     u.rate = SPEED
-    u.onend = u.onerror = () => { cooldownUntil = Date.now() + COOLDOWN_MS }
+    u.onend = u.onerror = () => {
+      cooldownUntil = Date.now() + COOLDOWN_MS
+      pending.delete(text)
+    }
+    pending.add(text)
     speechSynthesis.speak(u)
   }
 
@@ -50,6 +55,7 @@ export function startTts(apiKey: string, ttsUrl: string, langA: Lang): Tts {
     isSpeaking,
     stop: () => {
       speechSynthesis.cancel()
+      pending.clear()
       realtime.stop()
       if (ctx) {
         ctx.close().catch(() => { })
