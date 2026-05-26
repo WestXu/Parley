@@ -75,6 +75,16 @@ export function makeBoard(
     return pane.line
   }
 
+  const pulse = (el: HTMLElement) => {
+    el.animate(
+      [
+        { backgroundColor: "color-mix(in srgb, var(--hl) 50%, transparent)" },
+        { backgroundColor: "color-mix(in srgb, var(--hl) 20%, transparent)" },
+      ],
+      { duration: 500, easing: "ease-out" },
+    )
+  }
+
   const clearSelection = () => {
     if (!selected) return
     selected.classList.remove("selected")
@@ -167,6 +177,9 @@ export function makeBoard(
     }
     e.stopPropagation()
     if (span.classList.contains("selected")) {
+      pulse(span)
+      const partner = partnerOf(span)
+      if (partner) pulse(partner)
       tts.speakOnce(span.textContent ?? "", paneOf(sideOfSpan(span)).lang, Number(span.dataset.speaker))
     } else {
       select(span)
