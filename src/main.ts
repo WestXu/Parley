@@ -11,6 +11,7 @@ const apiKey = import.meta.env.VITE_SONIOX_API_KEY as string | undefined
 const { stt: sttUrl, tts: ttsUrl } = sonioxUrls(import.meta.env.VITE_REGION as string | undefined)
 const KEY_A = "parley.langA"
 const KEY_B = "parley.langB"
+const IDLE_MS = 20 * 60 * 1000
 
 const $ = <T extends HTMLElement>(sel: string) => {
   const el = document.querySelector(sel) as T | null
@@ -73,6 +74,7 @@ epBtn.addEventListener("click", () => output.toggle())
 let active: { mic: Mic; session: Session; board: Board; tts: Tts; langA: Lang; langB: Lang } | null = null
 let board: Board | null = null
 let wakeLock: WakeLockSentinel | null = null
+let idleTimer: ReturnType<typeof setTimeout> | null = null
 
 const setRunning = (running: boolean) => {
   document.body.classList.toggle("running", running)
@@ -90,8 +92,22 @@ const releaseWakeLock = () => {
   wakeLock = null
 }
 
+const clearIdleTimer = () => {
+  if (idleTimer == null) return
+  clearTimeout(idleTimer)
+  idleTimer = null
+}
+const resetIdleTimer = () => {
+  clearIdleTimer()
+  idleTimer = setTimeout(() => {
+    notify("stopped (idle 20m)", "info")
+    stop()
+  }, IDLE_MS)
+}
+
 const stop = () => {
   if (!active) return
+  clearIdleTimer()
   active.session.stop()
   active.mic.stop()
   active.tts.stop()
@@ -143,7 +159,10 @@ const start = async () => {
       if (output.isHeadphones() || !tts.isSpeaking()) session?.send(pcm)
     }, deviceId)
     session = startSession(apiKey, sttUrl, langA, langB, {
-      onTokens: fresh.apply,
+      onTokens: (items) => {
+        resetIdleTimer()
+        fresh.apply(items)
+      },
       onStatus: (s) => notify(s, s === "listening" ? "success" : "info"),
       onError: (e) => {
         console.error(e)
@@ -154,6 +173,7 @@ const start = async () => {
     active = { mic, session, board: fresh, tts, langA, langB }
     setRunning(true)
     acquireWakeLock()
+    resetIdleTimer()
   } catch (e) {
     console.error(e)
     notify((e as Error).message, "error")
