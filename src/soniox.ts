@@ -1,6 +1,6 @@
-export type Lang = "en" | "zh" | "vi" | "ja" | "th" | "nl" | "pt" | "fr" | "es" | "ru" | "ko"
+export type Lang = "en" | "zh" | "vi" | "ja" | "th" | "nl" | "pt" | "fr" | "es" | "ru" | "ko" | "tr"
 
-export const LANGS: Lang[] = ["en", "zh", "vi", "ja", "th", "nl", "pt", "fr", "es", "ru", "ko"]
+export const LANGS: Lang[] = ["en", "zh", "vi", "ja", "th", "nl", "pt", "fr", "es", "ru", "ko", "tr"]
 
 export type Token = {
   text: string
