@@ -15,6 +15,13 @@ const BCP47: Record<Lang, string> = {
   vi: "vi-VN",
   ja: "ja-JP",
   th: "th-TH",
+  nl: "nl-NL",
+  pt: "pt-BR",
+  fr: "fr-FR",
+  es: "es-ES",
+  ru: "ru-RU",
+  ko: "ko-KR",
+  tr: "tr-TR",
 }
 const SPEED = 1.25
 const COOLDOWN_MS = 300
