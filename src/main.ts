@@ -5,10 +5,17 @@ import { makeBoard, type Board } from "./render"
 import { startTts, type Tts } from "./tts"
 import { makeOutput } from "./output"
 import { notify } from "./notify"
-import { sonioxUrls } from "./region"
+import { pickEndpoint, type Region, type Candidate } from "./region"
 
-const apiKey = import.meta.env.VITE_SONIOX_API_KEY as string | undefined
-const { stt: sttUrl, tts: ttsUrl } = sonioxUrls(import.meta.env.VITE_REGION as string | undefined)
+const keys: Partial<Record<Region, string>> = {
+  us: import.meta.env.VITE_SONIOX_API_KEY_US,
+  eu: import.meta.env.VITE_SONIOX_API_KEY_EU,
+  jp: import.meta.env.VITE_SONIOX_API_KEY_JP,
+}
+const candidates = (Object.entries(keys) as [Region, string | undefined][])
+  .filter(([, k]) => k)
+  .map(([region, apiKey]): Candidate => ({ region, apiKey: apiKey! }))
+const endpoint = candidates.length ? pickEndpoint(candidates) : null
 const KEY_A = "parley.langA"
 const KEY_B = "parley.langB"
 const IDLE_MS = 20 * 60 * 1000
@@ -117,8 +124,8 @@ const stop = () => {
 }
 
 const start = async () => {
-  if (!apiKey) {
-    notify("missing VITE_SONIOX_API_KEY", "error")
+  if (!endpoint) {
+    notify("missing Soniox API key", "error")
     return
   }
   const langA = langASel.value
@@ -143,12 +150,13 @@ const start = async () => {
     }
   }
 
+  const ep = await endpoint
   notify("requesting mic", "info")
 
   board?.destroy()
   aEl.replaceChildren()
   bEl.replaceChildren()
-  const tts = startTts(apiKey, ttsUrl, langA)
+  const tts = startTts(ep.apiKey, ep.tts, langA)
   const fresh = makeBoard(aEl, langA, bEl, langB, tts, output)
   board = fresh
 
@@ -158,12 +166,12 @@ const start = async () => {
     mic = await startMic((pcm) => {
       if (output.isHeadphones() || !tts.isSpeaking()) session?.send(pcm)
     }, deviceId)
-    session = startSession(apiKey, sttUrl, langA, langB, {
+    session = startSession(ep.apiKey, ep.stt, langA, langB, {
       onTokens: (items) => {
         resetIdleTimer()
         fresh.apply(items)
       },
-      onStatus: (s) => notify(s, s === "listening" ? "success" : "info"),
+      onStatus: (s) => notify(s === "listening" ? `listening · ${ep.name}` : s, s === "listening" ? "success" : "info"),
       onError: (e) => {
         console.error(e)
         notify(e.message, "error")

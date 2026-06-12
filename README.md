@@ -17,10 +17,15 @@ Tokens stream back tagged with `language`,         `speaker`,         `is_final`
 
 ## Run
 
+Provide a Soniox API key per region you want available (any subset of US / EU / JP — Soniox
+keys are region-specific). On start the client probes each configured region and connects to the
+lowest-latency one; the status popup shows which region it picked.
+
 ```
 # .env
-VITE_SONIOX_API_KEY=...
-VITE_REGION=us  # us | eu | jp (default us)
+VITE_SONIOX_API_KEY_US=...
+VITE_SONIOX_API_KEY_EU=...
+VITE_SONIOX_API_KEY_JP=...
 ```
 
 ```bash
@@ -33,14 +38,16 @@ make serve
 
 ## Docker
 
-The Soniox key is inlined into the bundle at build time, so it must be passed as a build arg:
+Keys are inlined into the bundle at build time, so they must be passed as build args:
 
 ```bash
-docker build --build-arg VITE_SONIOX_API_KEY=... -t parley .
+docker build \
+  --build-arg VITE_SONIOX_API_KEY_US=... \
+  --build-arg VITE_SONIOX_API_KEY_EU=... \
+  --build-arg VITE_SONIOX_API_KEY_JP=... \
+  -t parley .
 docker run -p 4173:4173 parley
 ```
-
-Pass `--build-arg VITE_REGION=eu` (or `jp`) to use a non-US Soniox region.
 
 App is served at `http://localhost:4173/parley/`.
 
