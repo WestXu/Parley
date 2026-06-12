@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "soniox": {
+      "type": "http",
+      "url": "https://soniox.com/docs/api/mcp/mcp"
+    }
+  }
+}
