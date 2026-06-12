@@ -42,6 +42,7 @@ Keys are inlined into the bundle at build time, so they must be passed as build 
 
 ```bash
 docker build \
+  --build-arg VITE_COMMIT=$(git rev-parse --short HEAD) \
   --build-arg VITE_SONIOX_API_KEY_US=... \
   --build-arg VITE_SONIOX_API_KEY_EU=... \
   --build-arg VITE_SONIOX_API_KEY_JP=... \
