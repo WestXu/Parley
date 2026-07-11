@@ -22,7 +22,6 @@ const BCP47: Record<Lang, string> = {
   ru: "ru-RU",
   ko: "ko-KR",
   tr: "tr-TR",
-  cs: "cs-CZ",
 }
 const SPEED = 1.25
 const COOLDOWN_MS = 300
