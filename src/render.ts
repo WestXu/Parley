@@ -123,7 +123,7 @@ export function makeBoard(
     return s
   }
 
-  const addToChunk = (side: Side, speaker: number, chunk_id: number, tokens: Token[]) => {
+  const addToChunk = (side: Side, speaker: number, chunk_id: number, status: Token["status"], tokens: Token[]) => {
     const key = chunkKey(speaker, chunk_id, side)
     const existing = chunks.get(key)
     if (existing) {
@@ -140,6 +140,7 @@ export function makeBoard(
     span.dataset.key = key
     span.dataset.side = side
     span.dataset.speaker = String(speaker)
+    span.dataset.status = status
     for (const t of tokens) span.appendChild(makeTok(t))
 
     const del = document.createElement("button")
@@ -221,7 +222,7 @@ export function makeBoard(
     if (head.status === "translation" && output.isHeadphones()) {
       tts.feed(run.map((t) => t.text).join(""), head.language, head.speaker)
     }
-    addToChunk(side, head.speaker, head.chunk_id, run)
+    addToChunk(side, head.speaker, head.chunk_id, head.status, run)
   }
 
   const apply = (items: Item[]) => {

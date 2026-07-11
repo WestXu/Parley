@@ -6,6 +6,7 @@ import { startTts, type Tts } from "./tts"
 import { makeOutput } from "./output"
 import { notify } from "./notify"
 import { pickEndpoint, type Region, type Candidate } from "./region"
+import { serialize, share } from "./save"
 
 const keys: Partial<Record<Region, string>> = {
   us: import.meta.env.VITE_SONIOX_API_KEY_US,
@@ -35,6 +36,7 @@ const langBSel = $<HTMLSelectElement>("#lang-b")
 const aEl = $<HTMLElement>("#pane-a")
 const bEl = $<HTMLElement>("#pane-b")
 const swapLangsBtn = $<HTMLButtonElement>("#swap-langs")
+const saveBtn = $<HTMLButtonElement>("#save")
 
 const isLang = (s: string): s is Lang => (LANGS as string[]).includes(s)
 
@@ -83,11 +85,18 @@ let board: Board | null = null
 let wakeLock: WakeLockSentinel | null = null
 let idleTimer: ReturnType<typeof setTimeout> | null = null
 
+const hasTranscript = () => !!(aEl.querySelector(".sentence") || bEl.querySelector(".sentence"))
+
 const setRunning = (running: boolean) => {
   document.body.classList.toggle("running", running)
   startBtn.setAttribute("aria-label", running ? "stop translation" : "start translation")
   for (const el of [langASel, langBSel, swapLangsBtn, epBtn]) el.disabled = running
+  saveBtn.classList.toggle("hidden", running || !hasTranscript())
 }
+
+saveBtn.addEventListener("click", () =>
+  share(serialize(aEl, bEl, langASel.value as Lang, langBSel.value as Lang)),
+)
 
 const acquireWakeLock = async () => {
   if (wakeLock || !("wakeLock" in navigator)) return

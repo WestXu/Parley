@@ -13,6 +13,7 @@ Tokens stream back tagged with `language`,         `speaker`,         `is_final`
 ## Interactions
 
 * **Tap a sentence** — selects it and its translation as a pair. Tap the selected sentence again to hear it spoken aloud (TTS). Tap delete button to delete the pair. 
+* **Save** — after you stop, a share button appears in the control bar; tap it to save or send the transcript (speaker-labelled, both languages) via the system share sheet.
 * **Earphone mode** — toggle for when each speaker wears one earbud: translations are read aloud automatically as they arrive, each language panned to its own side, and the mic keeps listening even while TTS plays. (Side splitting doesn't work on iOS due to a system limitation.)
 
 ## Run
