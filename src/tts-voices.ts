@@ -1,4 +1,4 @@
-const VOICES = ["Adrian", "Maya", "Noah", "Nina", "Jack", "Grace", "Daniel", "Emma"]
+const VOICES = ["Adrian", "Noah", "Maya", "Nina", "Jack", "Grace", "Daniel", "Emma"]
 
 export const voiceFor = (speaker: number): string => {
   const i = Number.isFinite(speaker) ? speaker : 0
