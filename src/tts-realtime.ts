@@ -1,7 +1,7 @@
 import type { Lang } from "./soniox"
 import { voiceFor } from "./tts-voices"
 
-const MODEL = "tts-rt-v1"
+const MODEL = "tts-rt-v2"
 const SAMPLE_RATE = 24000
 const KEEPALIVE_MS = 20000
 const LEAD_S = 0.08
