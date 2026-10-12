@@ -36,7 +36,7 @@ export type Session = {
 
 export function startSession(apiKey: string, sttUrl: string, langA: Lang, langB: Lang, handlers: Handlers): Session {
   const { onTokens, onStatus, onError } = handlers
-  const ws = new WebSocket(sttUrl)
+  const ws = new WebSocket(sttUrl, ["soniox-api-key", apiKey])
   ws.binaryType = "arraybuffer"
 
   let open = false
@@ -45,7 +45,6 @@ export function startSession(apiKey: string, sttUrl: string, langA: Lang, langB:
 
   ws.onopen = () => {
     ws.send(JSON.stringify({
-      api_key: apiKey,
       model: "stt-rt-v5",
       audio_format: "pcm_s16le",
       sample_rate: 16000,

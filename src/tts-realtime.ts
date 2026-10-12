@@ -107,7 +107,7 @@ export function startRealtimeTts(apiKey: string, ttsUrl: string, langA: Lang, ge
   }
 
   const connect = () => {
-    const sock = new WebSocket(ttsUrl)
+    const sock = new WebSocket(ttsUrl, ["soniox-api-key", apiKey])
     ws = sock
     sock.onopen = () => {
       keepalive = window.setInterval(() => {
@@ -138,7 +138,6 @@ export function startRealtimeTts(apiKey: string, ttsUrl: string, langA: Lang, ge
     const stream: Stream = { id: `s${++seq}`, lang, speaker, carry: null, nextStartTime: 0 }
     streams.set(stream.id, stream)
     send({
-      api_key: apiKey,
       model: MODEL,
       language: lang,
       voice: voiceFor(speaker),
