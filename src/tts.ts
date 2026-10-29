@@ -23,6 +23,7 @@ const BCP47: Record<Lang, string> = {
   ko: "ko-KR",
   tr: "tr-TR",
   it: "it-IT",
+  id: "id-ID",
 }
 const SPEED = 1.25
 const COOLDOWN_MS = 300
